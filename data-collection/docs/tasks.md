@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 26 | **Updated** 2026-11-15 | **Approved**
+> **Version** 27 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -2533,3 +2533,21 @@ real recordings.
 **Implementation notes.** Replay the recordings through the Segmenter with
 candidate values and count gestures against known counts. The guided
 measurement (DC-L7) can supply a starting point for each user.
+
+**Deferred (2026-11-15).** Not started on purpose: the tuning needs real
+gestures of the real spells, and none are recorded yet (the test data was
+deleted when the placeholder spells were replaced). The plan, for when a first
+batch exists (about 30 to 50 gestures per spell):
+
+1. Build a replay-and-sweep tool that runs the stored clips of a data folder
+   through the Tracker and the Segmenter with different motion settings. A
+   sample's clip holds the gesture and 2 seconds either side of it, so the tool
+   can count the gestures it finds against the known one.
+2. Add a few continuous recordings of the wand held still (any camera
+   application will do, played back through the video file source) to count
+   false gestures, because saved samples only hold accepted gestures.
+3. Score missed and spurious gestures for a grid of values and propose new
+   defaults, with the method and results written down as the criteria say.
+
+Until then the provisional defaults stand, and each session can use the guided
+measurement on the Calibrate page, which records the settings it used.
