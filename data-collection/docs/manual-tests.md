@@ -177,6 +177,15 @@ column is filled in by task DC-S2.
 
 ### Check, merge, export and missing clips
 
+- **6.8** Open Browse with a few hundred samples. Resize the window wide,
+  then narrow, then short.
+  Expect: The thumbnails are a grid in their own scrolling pane, the page does
+  not scroll, and the selected sample (picture, buttons, details, and the
+  actions at the bottom) stays beside the grid. In a narrow window it sits
+  above the grid; in a narrow and short one the page scrolls and the sample
+  sticks to the top. The arrow keys, Space, Backspace, P and the digits work as
+  on Review, and the arrows go on to the next page at the end of a page.
+
 - **7.1** Run `uv run wand-collect check <folder>`.
   Expect: No errors.
 
@@ -228,6 +237,7 @@ column is filled in by task DC-S2.
 | 6.5 | n/a |  |
 | 6.6 | |  |
 | 6.7 | |  |
+| 6.8 | |  |
 | 7.1 | pass |  |
 | 7.2 | pass |  |
 | 7.3 | pass |  |

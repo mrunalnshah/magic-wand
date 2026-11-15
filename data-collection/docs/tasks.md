@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 21 | **Updated** 2026-11-14 | **Approved**
+> **Version** 22 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -163,6 +163,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-A17 | Camera list cache | Completed |
 | DC-U15 | Wording, hover and resume-flow polish | Completed |
 | DC-U16 | Accepted and rejected markers | Completed |
+| DC-U17 | Browse grid layout | Completed |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
 | DC-U3 | Calibrate page | Completed |
@@ -194,7 +195,7 @@ Every part of the approved designs is assigned to at least one task.
 | 3.2 Session lifecycle | DC-A9, DC-A1, DC-L9 |
 | 3.3 Calibration | DC-A5, DC-U3, DC-L6, DC-L7 |
 | 3.4 Capture cycle | DC-A10, DC-A3, DC-A7, DC-U4, DC-U5 |
-| 4.1 Web UI | DC-U1 to DC-U16 |
+| 4.1 Web UI | DC-U1 to DC-U17 |
 | 4.2 Application Server | DC-A2, DC-A4 |
 | 4.3 Application State | DC-A1 |
 | 4.4 Calibration Service | DC-A5, DC-A17 |
@@ -1899,7 +1900,9 @@ the samples revision changes. The selected sample is local page state.
 - [x] The detail view stays in the window while the list scrolls (sticky, and
       scrollable itself when taller than the window), so the selected sample
       is always visible beside the list. On a narrow window, where the two
-      stack, it scrolls with the page.
+      stack, it scrolls with the page. (Replaced by DC-U17: the list is a grid
+      of thumbnails in a scrolling pane, and the detail stays beside or above
+      it.)
 
 **Implementation notes.** `static/app/browse.js`. Thumbnails are
 `GET /api/samples/{id}/thumbnail`, loaded lazily as rows scroll into view.
@@ -2276,6 +2279,57 @@ does not rely on colour alone.
 
 **Implementation notes.** `statusMark` in `static/app/review.js`; `.mark`,
 `.thumbwrap` and `.strip .thumb.accepted|rejected` in `static/style.css`.
+
+### DC-U17 Browse grid layout
+
+- **Type**: feat
+- **Status**: Completed
+- **Depends on**: DC-U6, DC-U10, DC-U16
+- **Requirements**: R7.1, R7.2, R7.3, R7.4
+- **Design**: DC 4.1
+
+**Description.** The Browse page listed samples in a table, and the selected
+sample's detail scrolled out of sight (or was cramped beside it). Show the
+samples as a grid of thumbnails in a pane of their own, with the selected
+sample in a panel that stays put: the picture, the buttons that change what it
+shows, the details, and the actions pinned at the bottom. Build the grid and
+the panel as shared pieces (`static/app/sampleview.js`), so that the Review
+page can use them next (DC-U18, to be written).
+
+**Acceptance criteria.**
+
+- [x] Workspace pages (Browse, so far) use the whole height of the window: the
+      page does not scroll, and the grid pane does. Above the grid are the
+      per-label progress (one row) and the filters (one row, which scrolls
+      sideways in a narrow window).
+- [x] The grid shows each sample as a tile: thumbnail, accepted or rejected
+      marker and border (DC-U16), and the label's name. It is in pages of 100.
+- [x] The selected sample is shown in a panel beside the grid, about 40% of the
+      width: the picture (path or overlay), the buttons Path only, Overlay (or
+      the disabled "Video unavailable") and Scrub, the details, and, pinned at the
+      bottom, Relabel, Reject or Restore, and Delete. The picture leaves room for
+      the details, which scroll if they are tall.
+- [x] In a window narrower than 900 px the panel sits above the grid, and only
+      the grid scrolls. In a window that is also shorter than 640 px the page
+      scrolls instead, and the panel stays stuck to the top of it.
+- [x] The first sample is selected when the grid loads. Browse has the keys of
+      Review: Left and Right, Up and Down by a row, Space or `r` to reject or
+      restore, Backspace to delete, `p` for the overlay, and the digits to
+      relabel. Left and Right past the end of a page go to the next or the
+      previous page.
+- [x] Scrub video or path replaces the workspace and takes over the keys, as on
+      the Review page. Deleting a sample leaves no notice and selects the next
+      one.
+- [x] The layout was checked in Chrome at 1400x800, 1000x700, 700x800 and
+      700x500, with the real page and made-up data.
+- [x] Tests cover the grid, selection, the keys, paging, filters, delete and
+      scrub.
+
+**Implementation notes.** `SampleGrid`, `SampleDetail`, `useSampleDetails`,
+`columnsOf` and `nextSelection` in `sampleview.js`; `Browse` in `browse.js`;
+the `.shell.fill`, `.workspace`, `.tiles` and `.detail-pane` rules in
+`style.css`. A page asks for the full-height frame with `fill: true` in `PAGES`
+(`nav.js`).
 
 ## 10. Verification tasks
 

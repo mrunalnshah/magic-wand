@@ -15,6 +15,9 @@ import {
   useLabelKeys,
 } from "./labels.js";
 import { Scrub } from "./scrub.js";
+import { columnsOf, nextSelection, statusMark } from "./sampleview.js";
+
+export { columnsOf, nextSelection, statusMark };
 
 const PAGE_SIZE = 500; // the largest page the server gives
 
@@ -31,35 +34,6 @@ export async function fetchSession(sessionId) {
     if (items.length >= result.total || result.items.length === 0) break;
   }
   return items;
-}
-
-// Which sample to show after the list changed: the one that was selected,
-// else the one now at its position, else the latest.
-export function nextSelection(items, selectedId, previousIndex) {
-  if (items.length === 0) return null;
-  if (selectedId && items.some((item) => item.id === selectedId)) {
-    return selectedId;
-  }
-  if (selectedId && previousIndex >= 0) {
-    return items[Math.min(previousIndex, items.length - 1)].id;
-  }
-  return items[items.length - 1].id;
-}
-
-// The symbol that marks a thumbnail as accepted or rejected (the colour
-// says the same, and the button's label gives the status in words).
-export function statusMark(status) {
-  return status === "rejected" ? "✕" : "✓";
-}
-
-// How many tiles are in one row of the grid: those that share the first
-// tile's top edge. One when the layout is not known.
-export function columnsOf(list) {
-  const tiles = list ? Array.from(list.children) : [];
-  if (tiles.length === 0) return 1;
-  const top = tiles[0].offsetTop;
-  const count = tiles.filter((tile) => tile.offsetTop === top).length;
-  return Math.max(1, count);
 }
 
 function Button({ shortcuts, action, label, ...rest }) {
@@ -167,6 +141,7 @@ export function Review({ snapshot, shortcuts, notices, goTo }) {
       if (list.length === 0) return;
       const at = list.findIndex((item) => item.id === selectedRef.current);
       const next = Math.max(0, Math.min(list.length - 1, at + delta));
+      selectedRef.current = list[next].id; // keys may repeat before a redraw
       setSelected(list[next].id);
     },
     [],

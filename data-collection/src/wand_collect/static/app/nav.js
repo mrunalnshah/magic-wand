@@ -5,7 +5,9 @@ export const PAGES = [
   { id: "calibrate", title: "Calibrate" },
   { id: "record", title: "Record" },
   { id: "review", title: "Review" },
-  { id: "browse", title: "Browse" },
+  // `fill` pages use the whole height of the window: the page does not
+  // scroll, and the panes inside it do.
+  { id: "browse", title: "Browse", fill: true },
 ];
 
 const CAPTURING = ["COUNTDOWN", "READY", "RECORDING"];

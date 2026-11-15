@@ -44,7 +44,7 @@ function App() {
   }, [target]);
 
   const current = PAGES.find((entry) => entry.id === page);
-  return html`<div class="shell">
+  return html`<div class=${"shell" + (current.fill ? " fill" : "")}>
     <header class="bar">
       <h1>Magic Wand</h1>
       <nav>

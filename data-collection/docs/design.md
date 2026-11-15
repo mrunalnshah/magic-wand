@@ -1,6 +1,6 @@
 # Data Collection Application - Design
 
-> **Version** 18 | **Updated** 2026-11-14 | **Approved**
+> **Version** 19 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -282,8 +282,13 @@ shows what the Application State says.
     (path only or overlay) and details; step, reject, restore, delete and
     relabel actions; a selector for the active label; Resume. It opens when
     capturing is paused or a session is loaded.
-  - **Browse**: filterable sample table with thumbnails, a detail view, label,
-    status and delete actions, and per-label counts.
+  - **Browse**: a grid of thumbnails in a pane of its own, with filters and
+    per-label counts above it, and the selected sample beside it (above it in
+    a narrow window): the picture, the buttons that change what it shows, the
+    details, and the label, reject and delete actions pinned at the bottom. It
+    uses the whole height of the window, so only the grid scrolls (in a window
+    both narrow and short, the page scrolls and the selected sample stays
+    stuck to the top). It has the same keys as Review.
 - Keyboard shortcuts are read by a listener on the page. Defaults are below,
   are configurable in `config/data-collection.yaml` (an action can have a list
   of keys), and each is shown on its on-screen button. Space and Enter are left
@@ -293,8 +298,8 @@ shows what the Application State says.
 | Key | Action |
 |---|---|
 | Esc | While capturing: pause. In review: resume |
-| Left, Right | In review: previous or next sample |
-| Up, Down | In review: the sample one row above or below in the grid |
+| Left, Right | In review and Browse: previous or next sample |
+| Up, Down | In review and Browse: the sample one row above or below in the grid |
 | Space, R | In review: reject the selected sample (again to accept it) |
 | Backspace | In review: delete the selected sample |
 | P | Switch path-only and overlay views |
