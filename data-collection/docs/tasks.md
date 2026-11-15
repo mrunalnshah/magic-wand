@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 27 | **Updated** 2026-11-15 | **Approved**
+> **Version** 28 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -132,7 +132,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-F1 | Workspace and tooling | Completed |
 | DC-F2 | Configuration and settings models | Completed |
 | DC-S1 | H.264 encoding spike | Completed |
-| DC-S2 | Linux verification | Not started |
+| DC-S2 | Linux verification | In progress |
 | DC-L1 | Frame sources | Completed |
 | DC-L2 | Tracker | Completed |
 | DC-L3 | Segmenter | Completed |
@@ -413,7 +413,7 @@ The spike script is `data-collection/spikes/h264_spike.py`.
 ### DC-S2 Linux verification
 
 - **Type**: chore
-- **Status**: Not started
+- **Status**: In progress
 - **Depends on**: DC-S1
 - **Requirements**: N4, R6.6, R6.9
 - **Design**: DC 4.8, DC 7
@@ -433,8 +433,8 @@ machine or container is available; step 4 needs DC-V2.
 
 **Acceptance criteria.**
 
-- [ ] The commands in step 1 succeed on Linux.
-- [ ] PyAV's wheel on Linux can encode H.264 with `libx264`, and the 150-frame
+- [x] The commands in step 1 succeed on Linux.
+- [x] PyAV's wheel on Linux can encode H.264 with `libx264`, and the 150-frame
       clip encodes in well under 6 seconds. If it cannot, the fallbacks
       named in DC-S1 are tried and the outcome is recorded.
 - [ ] The MP4 plays in at least one Linux browser.
@@ -442,6 +442,17 @@ machine or container is available; step 4 needs DC-V2.
 - [ ] The findings are written in `docs/notes.md` (a version bump and review),
       and problems found are recorded as follow-up tasks. If the chosen video
       approach does not work on Linux, DC-A7 is changed accordingly.
+
+**Progress (2026-11-15).** Steps 1 and 2 were run in Docker, on a clean checkout
+made with `git archive`, on Debian 13 with Python 3.12 and uv 0.13: on ARM
+(aarch64) and on x86_64 (emulated). On both, `uv sync`, `ruff format --check`,
+`ruff check`, `pytest` (558 passed) and `wand-collect --help` succeed, and the
+spike encodes with PyAV `libx264` in 1.0 s (ARM) and 1.7 s (x86_64), as H.264
+with `faststart`. The findings are in `docs/notes.md` (platforms, and video
+clips). No problems were found, so no follow-up tasks. Still to do: step 3 (play
+the MP4 in a Linux browser) and step 4 (the checklist with a real camera on
+Linux), which need a Linux desktop. The findings criterion is met for what was
+run so far.
 
 **Implementation notes.**
 

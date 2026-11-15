@@ -1,6 +1,6 @@
 # Notes
 
-> **Version** 3 | **Updated** 2026-11-04 | **Approved**
+> **Version** 4 | **Updated** 2026-11-15 | **Approved**
 
 ## Overview
 
@@ -23,8 +23,12 @@ are tasks in the owning component's `tasks.md`, not notes.
 ## Platforms
 
 - macOS and Linux are supported. Windows is best effort and untested.
-- Everything so far was verified on macOS only. Linux verification is task
-  DC-S2.
+- Everything so far was verified on macOS. Linux was verified in part (task
+  DC-S2, steps 1 and 2) in Docker containers, on Debian 13 with Python 3.12,
+  on ARM (aarch64) and on x86_64 (emulated): a clean install, the format and
+  lint checks, the whole automated test suite and the H.264 encoding all pass.
+  Not yet checked on Linux: a real camera and the application in a Linux
+  browser (DC-S2, steps 3 and 4).
 - WSL2 does not expose webcams by default, so Windows users may not be able
   to capture from a camera there.
 
@@ -58,4 +62,12 @@ with moving shapes, a worst case for compression.
   avoid it, the application keeps PyAV out of its main process: the clip
   writer encodes in a separate worker process, and the overlay image reads
   its frame with OpenCV.
-- Linux has not been tested (task DC-S2).
+- Linux (task DC-S2, step 2): the same spike in a Debian 13 container. PyAV
+  encodes the clip with `libx264` in 1.0 s on ARM and 1.7 s on emulated x86_64
+  (the limit is 6 s), as H.264, `yuv420p`, with `faststart`. OpenCV `avc1`
+  does not open on Linux (the wheel has no H.264 encoder), and OpenCV tries a
+  hardware encoder first and prints "Could not find a valid device"; neither
+  matters, because the application encodes with PyAV. OpenCV `MJPG` works. The
+  automated tests include real encodings through the clip writer's worker
+  process, and they pass on Linux too. Playing the file in a Linux browser has
+  not been tried yet (DC-S2, step 3).
