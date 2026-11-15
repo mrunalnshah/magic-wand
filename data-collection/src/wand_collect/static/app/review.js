@@ -229,6 +229,7 @@ export function Review({ snapshot, shortcuts, notices }) {
       id=${selected}
       details=${details}
       onClose=${() => setScrubbing(false)}
+      shortcuts=${shortcuts}
     />`;
   }
   const latest = snapshot.latestSample;

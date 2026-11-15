@@ -38,3 +38,14 @@ shortcuts:
   reject: [" ", r]
   delete: Backspace
   toggleView: p
+  # The scrubbing view takes over the keys while it is open.
+  scrubPlay: " "
+  scrubBack: ArrowLeft
+  scrubForward: ArrowRight
+  scrubBackMany: Shift+ArrowLeft
+  scrubForwardMany: Shift+ArrowRight
+  scrubStart: Home
+  scrubEnd: End
+  scrubFullScreen: f
+  scrubVideo: v
+  scrubClose: Escape

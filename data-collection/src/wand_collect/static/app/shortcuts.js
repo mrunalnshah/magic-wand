@@ -4,6 +4,11 @@
 // Keys 1 to 9 always choose a label. Keys typed into an input field are
 // ignored, and so are Space and Enter while a button or link has the focus,
 // because the browser then uses them to press it.
+//
+// A key can be written with a Shift prefix ("Shift+ArrowLeft"); when Shift is
+// held, a binding that names it wins over the same key without it. A view that
+// takes over the keyboard (the scrubbing view) pushes a scope: while it is
+// active, only the actions it names respond.
 
 const DISPLAY = {
   Escape: "Esc",
@@ -19,8 +24,20 @@ const DISPLAY = {
 
 // How a key is shown on a button.
 export function keyLabel(key) {
+  if (key.length > 1 && key.includes("+") && !(key in DISPLAY)) {
+    return key.split("+").map(keyLabel).join("+");
+  }
   if (key in DISPLAY) return DISPLAY[key];
   return key.length === 1 ? key.toUpperCase() : key;
+}
+
+// Splits "Shift+ArrowLeft" into the key and whether Shift is part of it. A
+// lone "+" is the plus key.
+function parseKey(text) {
+  if (text.length > 1 && text.startsWith("Shift+")) {
+    return { key: text.slice(6), shift: true };
+  }
+  return { key: text, shift: false };
 }
 
 function isTyping(target) {
@@ -53,6 +70,7 @@ function keysOf(binding) {
 export function createShortcuts(bindings = {}) {
   let keys = { ...bindings };
   const handlers = new Map(); // action -> list of functions
+  const scopes = []; // the actions the top scope allows, or none
 
   function run(action, argument) {
     const list = handlers.get(action) || [];
@@ -80,6 +98,16 @@ export function createShortcuts(bindings = {}) {
         );
       };
     },
+    // Takes over the keyboard for the given actions until the returned
+    // function is called. Label digits are off while a scope is active.
+    pushScope(actions) {
+      const scope = { actions: new Set(actions) };
+      scopes.push(scope);
+      return () => {
+        const at = scopes.indexOf(scope);
+        if (at >= 0) scopes.splice(at, 1);
+      };
+    },
     // Handles a keyboard event; returns true if it was a shortcut.
     handle(event) {
       if (isTyping(event.target)) return false;
@@ -88,15 +116,30 @@ export function createShortcuts(bindings = {}) {
           isPressable(event.target)) {
         return false;
       }
-      if (/^[1-9]$/.test(event.key)) {
+      const scope = scopes[scopes.length - 1];
+      if (!scope && /^[1-9]$/.test(event.key)) {
         return run("label", Number(event.key));
       }
-      const action = Object.keys(keys).find((name) =>
-        keysOf(keys[name]).some(
-          (key) => key.toLowerCase() === event.key.toLowerCase(),
-        ),
-      );
-      return action ? run(action) : false;
+      // The most specific binding wins: one that names Shift beats one that
+      // does not, when Shift is held.
+      const wanted = event.key.toLowerCase();
+      let best = null;
+      let bestScore = 0;
+      Object.keys(keys).forEach((name) => {
+        if (scope && !scope.actions.has(name)) return;
+        if ((handlers.get(name) || []).length === 0) return; // nobody listens
+        keysOf(keys[name]).forEach((text) => {
+          const { key, shift } = parseKey(text);
+          if (key.toLowerCase() !== wanted) return;
+          if (shift && !event.shiftKey) return;
+          const score = shift ? 2 : 1;
+          if (score > bestScore) {
+            best = name;
+            bestScore = score;
+          }
+        });
+      });
+      return best ? run(best) : false;
     },
     attach(target = window) {
       const listener = (event) => {

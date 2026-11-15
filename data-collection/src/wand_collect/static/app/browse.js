@@ -136,7 +136,7 @@ function Filters({ snapshot, filters, sessions, onChange }) {
   </section>`;
 }
 
-function Detail({ snapshot, summary, notices, onClose }) {
+function Detail({ snapshot, summary, notices, onClose, shortcuts }) {
   const [details, setDetails] = useState(null);
   const [overlay, setOverlay] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -183,6 +183,7 @@ function Detail({ snapshot, summary, notices, onClose }) {
       id=${id}
       details=${details}
       onClose=${() => setScrubbing(false)}
+      shortcuts=${shortcuts}
     />`;
   }
   return html`<section class="panel detail">
@@ -247,7 +248,7 @@ function Detail({ snapshot, summary, notices, onClose }) {
   </section>`;
 }
 
-export function Browse({ snapshot, notices }) {
+export function Browse({ snapshot, notices, shortcuts }) {
   const [filters, setFilters] = useState(NO_FILTERS);
   const [page, setPage] = useState(1);
   const [result, setResult] = useState({ items: [], total: 0 });
@@ -329,6 +330,7 @@ export function Browse({ snapshot, notices }) {
               snapshot=${snapshot}
               summary=${summary}
               notices=${notices}
+              shortcuts=${shortcuts}
               onClose=${() => setSelected(null)}
             />`
           : html`<p class="hint">Select a sample to see it here.</p>`}

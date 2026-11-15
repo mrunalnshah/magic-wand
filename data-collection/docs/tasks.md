@@ -170,7 +170,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U10 | Review grid and Space key | Completed |
 | DC-U11 | Notices and page polish | Completed |
 | DC-U12 | Save to the loaded profile | Completed |
-| DC-U13 | Keyboard scrubbing | Not started |
+| DC-U13 | Keyboard scrubbing | Completed |
 | DC-U14 | Scrubbing without a clip | Not started |
 | DC-V1 | Whole-application test | Completed |
 | DC-V2 | Real-camera testing | In progress |
@@ -2049,7 +2049,7 @@ settings, so "Save to <name>" and the changed marker follow what was saved.
 ### DC-U13 Keyboard scrubbing
 
 - **Type**: feat
-- **Status**: Not started
+- **Status**: Completed
 - **Depends on**: DC-U7
 - **Requirements**: R7.5
 - **Design**: DC 4.1
@@ -2059,19 +2059,19 @@ keyboard control, so a sample can be examined with the hands on the keyboard.
 
 **Acceptance criteria.**
 
-- [ ] Left and Right step one frame back and forward, and Shift with an arrow
+- [x] Left and Right step one frame back and forward, and Shift with an arrow
       steps ten frames.
-- [ ] Space plays and pauses, and does not scroll the page or press a focused
+- [x] Space plays and pauses, and does not scroll the page or press a focused
       button.
-- [ ] Home and End go to the first and the last frame.
-- [ ] F enters and leaves full screen, and V shows and hides the video.
-- [ ] Escape leaves full screen first (as the browser does) and, pressed again,
+- [x] Home and End go to the first and the last frame.
+- [x] F enters and leaves full screen, and V shows and hides the video.
+- [x] Escape leaves full screen first (as the browser does) and, pressed again,
       closes the view.
-- [ ] The controls show their keys, for example `Space`, as the Review page
+- [x] The controls show their keys, for example `Space`, as the Review page
       does, and the keys are listed in a short line under the view.
-- [ ] The keys do not act while a field has the focus. The keys of the Review
+- [x] The keys do not act while a field has the focus. The keys of the Review
       page are not active while the view is open.
-- [ ] Tests cover each key, the guard and the closing of the view.
+- [x] Tests cover each key, the guard and the closing of the view.
 
 **Implementation notes.** `static/app/scrub.js` has no key handling today. Use
 `createShortcuts` so keys come from the settings (new actions `scrubPlay`,

@@ -105,6 +105,16 @@ def test_config_endpoint_gives_the_page_its_shortcuts(client):
         "reject": [" ", "r"],
         "delete": "Backspace",
         "toggleView": "p",
+        "scrubPlay": " ",
+        "scrubBack": "ArrowLeft",
+        "scrubForward": "ArrowRight",
+        "scrubBackMany": "Shift+ArrowLeft",
+        "scrubForwardMany": "Shift+ArrowRight",
+        "scrubStart": "Home",
+        "scrubEnd": "End",
+        "scrubFullScreen": "f",
+        "scrubVideo": "v",
+        "scrubClose": "Escape",
     }
     assert body["countdownS"] == 3.0
     assert body["clipPadding"] == {"preS": 2.0, "postS": 2.0}

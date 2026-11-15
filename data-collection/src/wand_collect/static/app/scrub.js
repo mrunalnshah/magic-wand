@@ -1,13 +1,29 @@
 // The scrubbing view: one sample's video with its path drawn over it. The
 // part of the path up to the current frame is highlighted. Only for samples
 // that have a clip. Frame positions come from the sample's `positions` and
-// the clip's `gestureStartS`.
+// the clip's `gestureStartS`. It can be used with the keyboard: while it is
+// open it takes over the keys (see SCRUB_ACTIONS).
 
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { html } from "./html.js";
 
 const FRAME_S = 1 / 30; // one step; the clip's rate is about 30 fps
+const MANY_FRAMES = 10;
+
+// The shortcut actions of this view; their keys are in the settings.
+export const SCRUB_ACTIONS = [
+  "scrubPlay",
+  "scrubBack",
+  "scrubForward",
+  "scrubBackMany",
+  "scrubForwardMany",
+  "scrubStart",
+  "scrubEnd",
+  "scrubFullScreen",
+  "scrubVideo",
+  "scrubClose",
+];
 const PATH_COLOR = "rgba(255, 255, 255, 0.35)";
 const DONE_COLOR = "#f0883e";
 const MARKER_COLOR = "#4cc38a";
@@ -51,7 +67,7 @@ export function drawPath(context, positions, count, width, height) {
   }
 }
 
-export function Scrub({ id, details, onClose }) {
+export function Scrub({ id, details, onClose, shortcuts }) {
   const stage = useRef(null);
   const video = useRef(null);
   const canvas = useRef(null);
@@ -129,6 +145,43 @@ export function Scrub({ id, details, onClose }) {
     videoShown = masked; // masked now, so the video is about to be shown
     setMasked(!masked);
   };
+  // Escape leaves full screen first (the browser usually does that itself
+  // and keeps the key), and closes the view when it is not full screen.
+  const close = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else onClose();
+  };
+
+  // The keyboard. The handlers always use the latest functions.
+  const keyActions = useRef({});
+  keyActions.current = {
+    scrubPlay: toggle,
+    scrubBack: () => step(-1),
+    scrubForward: () => step(1),
+    scrubBackMany: () => step(-MANY_FRAMES),
+    scrubForwardMany: () => step(MANY_FRAMES),
+    scrubStart: () => seek(0),
+    scrubEnd: () => seek(video.current.duration || 0),
+    scrubFullScreen: toggleFull,
+    scrubVideo: toggleMask,
+    scrubClose: close,
+  };
+  useEffect(() => {
+    if (!shortcuts) return undefined;
+    const release = shortcuts.pushScope(SCRUB_ACTIONS);
+    const off = SCRUB_ACTIONS.map((action) =>
+      shortcuts.on(action, () => keyActions.current[action]()),
+    );
+    return () => {
+      release();
+      off.forEach((remove) => remove());
+    };
+  }, [shortcuts]);
+  const key = (action) => (shortcuts ? shortcuts.keyFor(action) : "");
+  const hint = (action) => {
+    const text = key(action);
+    return text && html` <kbd>${text}</kbd>`;
+  };
   const boxClass =
     "box" + (details.mirrored ? " mirrored" : "") + (masked ? " masked" : "");
 
@@ -146,12 +199,14 @@ export function Scrub({ id, details, onClose }) {
       </div>
     </div>
     <div class="row controls">
-      <button onClick=${toggle}>${playing ? "Pause" : "Play"}</button>
+      <button onClick=${toggle}>
+        ${playing ? "Pause" : "Play"}${hint("scrubPlay")}
+      </button>
       <button aria-label="Back one frame" onClick=${() => step(-1)}>
-        ◀ Frame
+        ◀ Frame${hint("scrubBack")}
       </button>
       <button aria-label="Forward one frame" onClick=${() => step(1)}>
-        Frame ▶
+        Frame ▶${hint("scrubForward")}
       </button>
       <input
         type="range"
@@ -161,15 +216,24 @@ export function Scrub({ id, details, onClose }) {
         step="0.01"
         value=${time}
         onInput=${(event) => seek(Number(event.target.value))}
+        onChange=${(event) => event.target.blur()}
       />
       <span class="hint">${time.toFixed(2)} s</span>
       <button aria-pressed=${masked} onClick=${toggleMask}>
-        ${masked ? "Show video" : "Hide video"}
+        ${masked ? "Show video" : "Hide video"}${hint("scrubVideo")}
       </button>
       <button onClick=${toggleFull}>
-        ${full ? "Leave full screen" : "Full screen"}
+        ${full ? "Leave full screen" : "Full screen"}${hint("scrubFullScreen")}
       </button>
-      <button onClick=${onClose}>Close</button>
+      <button onClick=${onClose}>Close${hint("scrubClose")}</button>
     </div>
+    ${shortcuts &&
+    html`<p class="hint keys">
+      <kbd>${key("scrubBack")}</kbd> <kbd>${key("scrubForward")}</kbd> one
+      frame, <kbd>${key("scrubBackMany")}</kbd>
+      <kbd>${key("scrubForwardMany")}</kbd> ten frames,
+      <kbd>${key("scrubStart")}</kbd> <kbd>${key("scrubEnd")}</kbd> first and
+      last frame
+    </p>`}
   </section>`;
 }

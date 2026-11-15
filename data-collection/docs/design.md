@@ -290,6 +290,7 @@ shows what the Application State says.
 | Backspace | In review: delete the selected sample |
 | P | Switch path-only and overlay views |
 | 1 to 9 | Capturing: set the active label. In review: relabel the sample |
+| Space, Left, Right, Shift with Left or Right, Home, End, F, V, Esc | In the scrubbing view, which takes over the keys while it is open: play or pause, one frame back or forward, ten frames, first or last frame, full screen, show or hide the video, leave full screen and then close |
 
 While capturing, a mouse click anywhere pauses and opens review.
 

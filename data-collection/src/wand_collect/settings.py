@@ -65,6 +65,17 @@ class Shortcuts(SettingsModel):
     reject: str | list[str] = [" ", "r"]
     delete: str = "Backspace"
     toggle_view: str = "p"
+    # The scrubbing view.
+    scrub_play: str = " "
+    scrub_back: str = "ArrowLeft"
+    scrub_forward: str = "ArrowRight"
+    scrub_back_many: str = "Shift+ArrowLeft"
+    scrub_forward_many: str = "Shift+ArrowRight"
+    scrub_start: str = "Home"
+    scrub_end: str = "End"
+    scrub_full_screen: str = "f"
+    scrub_video: str = "v"
+    scrub_close: str = "Escape"
 
 
 class DataCollectionSettings(SettingsModel):
