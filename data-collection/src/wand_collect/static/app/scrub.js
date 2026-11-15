@@ -262,6 +262,9 @@ export function Scrub({ id, details, onClose, shortcuts }) {
       off.forEach((remove) => remove());
     };
   }, [shortcuts]);
+  const pointReadout =
+    `Point ${countUpTo(times, start, time)} / ${times.length} · ` +
+    `${time.toFixed(2)} s`;
   const key = (action) => (shortcuts ? shortcuts.keyFor(action) : "");
   const hint = (action) => {
     const text = key(action);
@@ -318,7 +321,7 @@ export function Scrub({ id, details, onClose, shortcuts }) {
         onInput=${(event) => seek(Number(event.target.value))}
         onChange=${(event) => event.target.blur()}
       />
-      <span class="hint">${time.toFixed(2)} s</span>
+      <span class="hint point-count">${pointReadout}</span>
       <button
         aria-pressed=${masked}
         disabled=${!hasVideo}

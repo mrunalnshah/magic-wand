@@ -331,6 +331,14 @@ def test_queries_over_10000_samples_are_fast(rig):
 # --- Details and images -------------------------------------------------------
 
 
+def test_the_list_gives_the_number_of_tracked_points_of_each_sample(rig):
+    session = rig.session()
+    sample = rig.sample(session)  # its positions have three points
+    body = rig.client.get(f"/api/samples?session={session.session_id}").json()
+    assert [item["points"] for item in body["items"]] == [3]
+    assert body["items"][0]["id"] == sample.sample_id
+
+
 def test_details_have_the_record_and_a_clip_flag(rig):
     session = rig.session()
     plain = rig.sample(session)

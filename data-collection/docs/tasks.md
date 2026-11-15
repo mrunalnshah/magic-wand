@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 24 | **Updated** 2026-11-15 | **Approved**
+> **Version** 25 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -165,6 +165,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U16 | Accepted and rejected markers | Completed |
 | DC-U17 | Browse grid layout | Completed |
 | DC-U18 | Infinite scroll and the Review workspace | Completed |
+| DC-U19 | Point counts and one page width | Completed |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
 | DC-U3 | Calibrate page | Completed |
@@ -196,7 +197,7 @@ Every part of the approved designs is assigned to at least one task.
 | 3.2 Session lifecycle | DC-A9, DC-A1, DC-L9 |
 | 3.3 Calibration | DC-A5, DC-U3, DC-L6, DC-L7 |
 | 3.4 Capture cycle | DC-A10, DC-A3, DC-A7, DC-U4, DC-U5 |
-| 4.1 Web UI | DC-U1 to DC-U18 |
+| 4.1 Web UI | DC-U1 to DC-U19 |
 | 4.2 Application Server | DC-A2, DC-A4 |
 | 4.3 Application State | DC-A1 |
 | 4.4 Calibration Service | DC-A5, DC-A17 |
@@ -2388,6 +2389,42 @@ set of code. Also replace the placeholder spells with the real list.
 layout (the strip of thumbnails above or below a panel) is gone. The new Review
 shows the newest sample first (it used to be in capture order, with the latest
 last).
+
+### DC-U19 Point counts and one page width
+
+- **Type**: feat
+- **Status**: Completed
+- **Depends on**: DC-U17, DC-U7
+- **Requirements**: R7.2, R7.5
+- **Design**: DC 4.1
+
+**Description.** Two requests from testing. Show how many points are tracked in
+each sample, so that very short or very long gestures stand out: on each
+thumbnail, and in the scrubbing view as the current point out of the total.
+And give every page the same width, the one that Browse and Review already had.
+
+**Acceptance criteria.**
+
+- [x] Each entry of the sample list has `points`, the number of tracked points
+      of the gesture (the positions in the sample; a frame where the tip was not
+      found has none).
+- [x] Each thumbnail shows its number of points in the top left corner, and the
+      tile's label says it ("... 26 points"). The details panel shows the same
+      number as "Points".
+- [x] The scrubbing view shows "Point <n> / <total> · <time> s", where n counts
+      the points up to the current time of the video or of the path replay. With
+      a clip it is 0 before the gesture and the total after it.
+- [x] Every page is as wide as Browse and Review were (1700 px at most), instead
+      of 1100 px for Setup, Calibrate and Record. Checked in Chrome at 1600 px
+      for Setup and Calibrate.
+- [x] Tests cover the list field, the badge and the readout.
+
+**Implementation notes.** `SampleSummary.points` in `services/library.py`;
+`SampleGrid` in `sampleview.js`; `pointReadout` in `scrub.js`; `.shell` in
+`style.css`. The readout is built as one string, because the template engine
+drops the space around a line break. A point is one tracked frame, so the count
+can be lower than the number of video frames of the gesture; the clip's own
+frame count is not stored.
 
 ## 10. Verification tasks
 

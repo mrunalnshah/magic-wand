@@ -188,6 +188,13 @@ column is filled in by task DC-S2.
   sticks to the top. The arrow keys, Space, Backspace, P and the digits work as
   on Review, and the arrows go on to the next page at the end of a page.
 
+- **6.9** Look at the thumbnails on Browse, then open the scrubbing view
+  (S) of a sample and step through it.
+  Expect: Each thumbnail shows its number of tracked points in the top left.
+  The scrubbing view shows "Point n / total", which goes up as you step, and
+  the total matches the number on the thumbnail. Setup, Calibrate, Record,
+  Review and Browse all have the same width.
+
 - **7.1** Run `uv run wand-collect check <folder>`.
   Expect: No errors.
 
@@ -240,6 +247,7 @@ column is filled in by task DC-S2.
 | 6.6 | |  |
 | 6.7 | |  |
 | 6.8 | |  |
+| 6.9 | |  |
 | 7.1 | pass |  |
 | 7.2 | pass |  |
 | 7.3 | pass |  |

@@ -81,11 +81,14 @@ export function SampleGrid({ items, selectedId, snapshot, onSelect, listRef }) {
           aria-label=${`Sample ${index + 1}, ${labelName(
             snapshot,
             item.label,
-          )}, ${item.status}`}
+          )}, ${item.status}, ${item.points} points`}
           onClick=${() => onSelect(item.id)}
         >
           <span class="thumbbox">
             <img loading="lazy" src=${thumbnail(item.id)} alt="" />
+            <span class="points" title="Tracked points in the gesture">
+              ${item.points}
+            </span>
             <span class="mark" aria-hidden="true">
               ${statusMark(item.status)}
             </span>

@@ -67,6 +67,7 @@ class SampleSummary:
     status: SampleStatus
     captured_at: datetime
     has_clip: bool
+    points: int = 0  # the tracked points of the gesture
 
     def to_json(self) -> dict[str, Any]:
         return camel_keys(
@@ -79,6 +80,7 @@ class SampleSummary:
                 "status": self.status.value,
                 "captured_at": self.captured_at.isoformat(),
                 "has_clip": self.has_clip,
+                "points": self.points,
             }
         )
 
@@ -154,6 +156,7 @@ class SampleLibrary:
             record.status,
             record.captured_at,
             self._store.has_clip(record),
+            len(record.positions.time_s),
         )
 
     def _add(self, record: SampleRecord) -> None:

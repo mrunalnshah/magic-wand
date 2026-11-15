@@ -25,8 +25,9 @@ body {
   color: var(--text);
 }
 
+/* Every page has the same width. */
 .shell {
-  max-width: 1100px;
+  max-width: 1700px;
   margin: 0 auto;
   padding: 0 16px 32px;
 }
@@ -737,7 +738,6 @@ td.rejected {
 
 /* Pages that use the whole window: the page does not scroll, the panes do. */
 .shell.fill {
-  max-width: 1700px;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -877,6 +877,27 @@ td.rejected {
 
 .tile.rejected img {
   opacity: 0.4;
+}
+
+/* The number of tracked points in the gesture, top left of the thumbnail. */
+.tile .points {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+  pointer-events: none;
+}
+
+.point-count {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .tile .caption {
