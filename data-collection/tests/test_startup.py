@@ -61,7 +61,7 @@ def test_the_repository_labels_load():
         "spell_two",
         "spell_three",
     ]
-    assert labels[0].name == "Spell One"
+    assert [label.name for label in labels] == ["Theta", "Mu", "Omega"]
 
 
 @pytest.mark.parametrize(
