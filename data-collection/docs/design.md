@@ -776,7 +776,8 @@ the Web UI shows about the current state comes from `state`.
 | `POST /api/calibration/measure` | Run the guided motion measurement |
 | `PUT /api/settings` | Change settings (refused during a session) |
 | `GET /api/profiles` | List profiles |
-| `PUT /api/profiles/{name}` | Save a profile |
+| `GET /api/profiles/{name}` | The vision and motion settings stored in a profile |
+| `PUT /api/profiles/{name}` | Save the current settings as a profile, which becomes the loaded one |
 | `POST /api/profiles/{name}/load` | Load a profile |
 | `DELETE /api/profiles/{name}` | Delete a profile |
 | `GET /api/sessions` | List sessions, open and ended |

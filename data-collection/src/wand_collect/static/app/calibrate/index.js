@@ -85,7 +85,13 @@ export function Calibrate({ snapshot, store, notices, goTo }) {
           notices=${notices}
           locked=${locked}
         />
-        <${Profiles} loaded=${profile} notices=${notices} locked=${locked} />
+        <${Profiles}
+          loaded=${profile}
+          vision=${vision}
+          motion=${motion}
+          notices=${notices}
+          locked=${locked}
+        />
       </div>
       <div>
         <${MotionTuning}

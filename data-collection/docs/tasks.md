@@ -169,7 +169,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U9 | Delete without an error notice | Completed |
 | DC-U10 | Review grid and Space key | Completed |
 | DC-U11 | Notices and page polish | Completed |
-| DC-U12 | Save to the loaded profile | Not started |
+| DC-U12 | Save to the loaded profile | Completed |
 | DC-U13 | Keyboard scrubbing | Not started |
 | DC-U14 | Scrubbing without a clip | Not started |
 | DC-V1 | Whole-application test | Completed |
@@ -2007,7 +2007,7 @@ the Setup page are not aligned.
 ### DC-U12 Save to the loaded profile
 
 - **Type**: feat
-- **Status**: Not started
+- **Status**: Completed
 - **Depends on**: DC-U3
 - **Requirements**: R1.6
 - **Design**: DC 3.3, 4.1
@@ -2019,26 +2019,32 @@ settings over the loaded profile.
 
 **Acceptance criteria.**
 
-- [ ] When a profile is loaded, the Profiles panel shows a button "Save to
+- [x] When a profile is loaded, the Profiles panel shows a button "Save to
       <name>", beside the name field, that saves the current settings under
       that name with the same request as the existing save.
-- [ ] Saving over a profile replaces it, so the button asks for no
-      confirmation, and shows a notice that the profile was saved. (The name
-      field still asks nothing for a new name.)
-- [ ] The button is not shown when no profile is loaded, and is disabled while
+- [x] Saving over a profile replaces it, so the button asks for no
+      confirmation, and shows a short "Saved to <name>." next to the button (an
+      inline confirmation, because the notices at the top are for errors).
+      (The name field still asks nothing for a new name.)
+- [x] The button is not shown when no profile is loaded, and is disabled while
       the settings are locked by a session.
-- [ ] After the settings differ from the loaded profile, the panel says so
+- [x] After the settings differ from the loaded profile, the panel says so
       ("changed since loaded"), so the user knows a save would change it.
       After a save, or a load of a profile, it does not.
-- [ ] Typing a name that already exists in the name field and pressing Save
+- [x] Typing a name that already exists in the name field and pressing Save
       overwrites it as before.
-- [ ] Tests cover the button, its absence without a loaded profile, and the
+- [x] Tests cover the button, its absence without a loaded profile, and the
       changed marker.
 
 **Implementation notes.** `static/app/calibrate/profiles.js` (`loaded` comes
 from `snapshot.settings.profile`). For the changed marker compare the state's
 vision and motion settings with the profile as returned by the server; if
 there is no endpoint that returns the profile's settings, add one in DC-A5.
+
+**Done as.** `GET /api/profiles/{name}` returns the stored vision and motion
+settings, and the panel compares them with the state. Saving a profile (under
+any name) also makes it the loaded profile, unless a session has locked the
+settings, so "Save to <name>" and the changed marker follow what was saved.
 
 ### DC-U13 Keyboard scrubbing
 

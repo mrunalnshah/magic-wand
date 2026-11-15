@@ -513,6 +513,31 @@ def test_a_profile_is_saved_listed_loaded_and_deleted(rig):
     assert rig.state.snapshot.settings.profile is None  # it was the loaded one
 
 
+def test_saving_a_profile_makes_it_the_loaded_one(rig):
+    rig.client.put("/api/settings", json={"vision": {"hueCenter": 33}})
+    rig.client.put("/api/profiles/first")
+    assert rig.state.snapshot.settings.profile == "first"
+    rig.client.put("/api/settings", json={"vision": {"hueCenter": 40}})
+    assert rig.state.snapshot.settings.profile == "first"  # edits keep it
+    rig.client.put("/api/profiles/first")  # saving over the loaded profile
+    assert rig.state.snapshot.settings.profile == "first"
+    rig.client.put("/api/profiles/second")
+    assert rig.state.snapshot.settings.profile == "second"
+
+
+def test_a_profile_can_be_read_back_to_compare_with_the_settings(rig):
+    rig.client.put("/api/settings", json={"vision": {"hueCenter": 33}})
+    rig.client.put("/api/profiles/desk")
+    body = rig.client.get("/api/profiles/desk").json()
+    assert body["name"] == "desk"
+    assert body["vision"]["hueCenter"] == 33
+    current = rig.state.snapshot.to_json_dict()["settings"]
+    assert body["vision"] == current["vision"]
+    assert body["motion"] == current["motion"]
+    assert rig.client.get("/api/profiles/none").status_code == 404
+    assert rig.client.get("/api/profiles/.hidden").status_code == 400
+
+
 def test_a_saved_profile_has_everything_in_camel_case_and_survives_a_restart(
     rig, tmp_path
 ):

@@ -125,6 +125,7 @@ class CalibrationService:
         add("/calibration/clicks", self.clicks, methods=["POST"])
         add("/calibration/measure", self.measure, methods=["POST"])
         add("/profiles", self.get_profiles, methods=["GET"])
+        add("/profiles/{name}", self.get_profile, methods=["GET"])
         add(
             "/profiles/{name}",
             self.put_profile,
@@ -396,8 +397,31 @@ class CalibrationService:
         )
         return [{"name": name} for name in names]
 
+    def get_profile(self, name: str) -> dict[str, Any]:
+        """The settings stored in a profile (for comparing with the current)."""
+        try:
+            path = profile_path(self._config_dir, name)
+        except SettingsError as error:
+            raise InvalidRequestError(str(error)) from error
+        if not path.exists():
+            raise NotFoundError(f"no profile named {name!r}")
+        try:
+            working = load_profile(self._config_dir, name)
+        except SettingsError as error:
+            raise InvalidRequestError(str(error)) from error
+        return {
+            "name": name,
+            "vision": camel_keys(working.vision.model_dump()),
+            "motion": camel_keys(working.motion.model_dump()),
+        }
+
     def put_profile(self, name: str) -> None:
-        """Save the current settings as a profile."""
+        """Save the current settings as a profile.
+
+        The saved profile becomes the loaded one, because the current
+        settings now are that profile. While a session is loaded the settings
+        and the loaded profile are fixed, so the state is left alone then.
+        """
         current = self._state.snapshot.settings
         try:
             save_profile(
@@ -407,6 +431,8 @@ class CalibrationService:
             )
         except SettingsError as error:
             raise InvalidRequestError(str(error)) from error
+        if not settings_locked(self._state.snapshot):
+            self._write(profile=name)
 
     def post_profile_load(self, name: str) -> None:
         self._require_unlocked()
