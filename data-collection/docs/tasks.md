@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 13 | **Updated** 2026-11-05 | **Approved**
+> **Version** 17 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -156,6 +156,8 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-A11 | Command-line tools | Completed |
 | DC-A12 | Session deletion | Completed |
 | DC-A13 | Session name and notes | Completed |
+| DC-A14 | Frame-rate measurement | Not started |
+| DC-A15 | Camera identity on macOS | Not started |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
 | DC-U3 | Calibrate page | Completed |
@@ -163,6 +165,13 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U5 | Review page | Completed |
 | DC-U6 | Browse page | Completed |
 | DC-U7 | Scrubbing view (P2) | Completed |
+| DC-U8 | No-camera message | Not started |
+| DC-U9 | Delete without an error notice | Not started |
+| DC-U10 | Review grid and Space key | Not started |
+| DC-U11 | Notices and page polish | Not started |
+| DC-U12 | Save to the loaded profile | Not started |
+| DC-U13 | Keyboard scrubbing | Not started |
+| DC-U14 | Scrubbing without a clip | Not started |
 | DC-V1 | Whole-application test | Completed |
 | DC-V2 | Real-camera testing | In progress |
 | DC-V3 | Motion threshold tuning | Not started |
@@ -180,12 +189,12 @@ Every part of the approved designs is assigned to at least one task.
 | 3.2 Session lifecycle | DC-A9, DC-A1, DC-L9 |
 | 3.3 Calibration | DC-A5, DC-U3, DC-L6, DC-L7 |
 | 3.4 Capture cycle | DC-A10, DC-A3, DC-A7, DC-U4, DC-U5 |
-| 4.1 Web UI | DC-U1 to DC-U7 |
+| 4.1 Web UI | DC-U1 to DC-U14 |
 | 4.2 Application Server | DC-A2, DC-A4 |
 | 4.3 Application State | DC-A1 |
 | 4.4 Calibration Service | DC-A5 |
-| 4.5 Session Service | DC-A9, DC-A13 |
-| 4.6 Capture Engine | DC-A3 |
+| 4.5 Session Service | DC-A9, DC-A13, DC-A15 |
+| 4.6 Capture Engine | DC-A3, DC-A14 |
 | 4.7 Capture Controller | DC-A10 |
 | 4.8 Clip Writer | DC-A7, DC-S1 |
 | 4.9 Sample Library | DC-A8 |
@@ -1487,6 +1496,98 @@ Cancel.
 **Implementation notes.** `SessionService.patch` uses
 `DatasetStore.update_session`; `DetailsEditor` in `static/app/setup.js`.
 
+### DC-A14 Frame-rate measurement
+
+- **Type**: fix
+- **Status**: Not started
+- **Depends on**: DC-A3
+- **Requirements**: R6.7
+- **Design**: DC 4.6
+
+**Description.** Found in manual test 1.4 (`manual-tests.md`, section 4). The
+Capture Engine measures the camera's actual frame rate once, over the first 2
+seconds after the camera opens, and keeps the result until the camera is
+reopened. A camera that stalls while it starts gives a wrong number: an
+external webcam with a smooth live view showed 3.1 and then 0.4 fps, and the
+built-in camera 18.2 and then about 24 fps. The number is shown on the Setup
+page, drives the mode warning, and is recorded in `session.json` as the actual
+mode. Measure the rate so that a startup stall cannot spoil it, and keep the
+measurement up to date while the camera runs.
+
+**Acceptance criteria.**
+
+- [ ] The measurement ignores the frames of a warm-up period after the camera
+      opens, and is then taken from a window of the most recent frames.
+- [ ] The rate is the inverse of the median interval between frames in the
+      window, so a few long gaps do not change it.
+- [ ] The window keeps moving while the camera runs, and the rate in the
+      Application State is updated when it changes by more than 5%, not on
+      every frame.
+- [ ] No rate is published until the window holds enough frames to be
+      meaningful, and until then the state shows the rate as not yet measured.
+- [ ] A test feeds frame timestamps with a long stall at the start and then a
+      steady 30 fps, and expects about 30 fps. A second test uses a steady
+      10 fps and expects about 10. A third test uses a video file, whose
+      source ends, and expects no rate or error from the end of the file.
+- [ ] The Setup page shows "measuring" while there is no rate, and the mode
+      warning is not shown until there is one.
+- [ ] A session records the rate at the moment it starts. If there is none
+      yet, it records the rate the camera reported when it opened.
+
+**Implementation notes.** `CaptureEngine._measure_fps` and
+`_finish_fps_measurement` in `engine.py`. A deque of the last 30 or so frame
+timestamps is enough. The clip writer already uses each frame's capture time, so
+clips and positions are not affected by this task; the clip's nominal rate is.
+
+### DC-A15 Camera identity on macOS
+
+- **Type**: fix
+- **Status**: Not started
+- **Depends on**: DC-A9, DC-L1
+- **Requirements**: R2.6
+- **Design**: DC 3.2, 4.5; Lib 5
+
+**Description.** Found in manual test 6.4 (`manual-tests.md`, section 4). A
+session records the camera as a device identifier. macOS gives OpenCV no camera
+names, so the identifier is `index:<n>` and means only "the n-th camera the
+system lists". The order changes when a camera is unplugged or another is
+connected, so a session recorded with an external camera at index 0 resumed on
+the built-in camera, which then became index 0. R2.6 requires that resuming is
+blocked when the recorded camera is unavailable or is a different camera. The
+resumed session also applies the vision settings calibrated for the first camera,
+so tracking fails on the other one. Give each camera an identifier that
+stays the same when the set of cameras changes, and use it to match the camera
+on resume.
+
+**Acceptance criteria.**
+
+- [ ] On macOS each listed camera has its name and a stable unique identifier
+      from the system, and the session records both. The name is shown on the
+      Setup page in place of `index:<n>`.
+- [ ] The identifier of a camera is the same before and after another camera
+      is unplugged or plugged in, and the index used to open it is looked up from
+      it each time.
+- [ ] Resume finds the recorded camera by its identifier. When it is not
+      connected, Resume is refused with a message that names the camera, even if
+      another camera is available.
+- [ ] Where no stable identifier is available (for example a Linux camera
+      without a name), the session records the index, and Resume proceeds only
+      with a warning that the camera cannot be verified, and shows the camera now
+      in use.
+- [ ] Sessions recorded before this change (identifier `index:<n>`) still
+      load, and Resume treats them as in the previous criterion.
+- [ ] Tests cover a changed camera order, a missing camera and an old-style
+      identifier, using a fake camera lister.
+
+**Implementation notes.** `list_cameras` and `camera_name` in
+`wand_core/sources.py`, `SessionService._find_camera`. On macOS the names and
+unique identifiers come from AVFoundation, for example through
+`pyobjc-framework-AVFoundation` as a macOS-only dependency. The order that
+AVFoundation lists devices in has to be checked against the order OpenCV uses
+for its indices on a machine with several cameras (built-in, external and
+iPhone), because the match depends on it. If they differ, open the camera by
+the AVFoundation identifier instead of by index.
+
 ## 9. Web UI tasks
 
 The Web UI is built with Preact and htm from vendored files, as ES modules
@@ -1746,6 +1847,260 @@ frames with the path drawn over them. Only for samples with a clip.
 **Implementation notes.** `static/app/scrub.js`. Use a `<video>` element and a
 canvas on top. Frame positions come from the sample's `positions` and
 `gestureStartS`.
+
+### DC-U8 No-camera message
+
+- **Type**: fix
+- **Status**: Not started
+- **Depends on**: DC-U2
+- **Requirements**: R1.1
+- **Design**: DC 4.1
+
+**Description.** Found in manual test 0.3 (`manual-tests.md`, section 4). When
+no camera can be opened, the Setup page says only "No cameras were found." and
+the state says "No camera is in use". On macOS the usual cause is that camera
+access was denied to the terminal app, and the page does not say so. Replace
+the message with one that names the likely causes and how to fix each, so the
+user does not have to read the terminal output to find out.
+
+**Acceptance criteria.**
+
+- [ ] When the camera list is empty, the Setup page shows a message that names
+      the likely causes: the camera is unplugged, another application is using
+      it, and camera access is denied to the application that runs this one.
+- [ ] On macOS the message gives the place to fix the permission (System
+      Settings, Privacy and Security, Camera) and says that the terminal app
+      may have to be restarted afterwards. On other systems the permission
+      sentence is left out.
+- [ ] The message offers a Retry button that fetches the camera list again, so
+      the user does not have to reload the page after fixing the problem.
+- [ ] The message is not shown while the list is still loading, and it is
+      replaced by the camera list as soon as a camera is found.
+- [ ] A test covers the empty list, the list with cameras and the Retry.
+
+**Implementation notes.** `static/app/setup.js` (the hint at the empty list).
+Detecting a denied permission for certain needs a macOS framework call
+(AVFoundation through pyobjc), which is not a dependency, so name the causes
+rather than claim one. The OpenCV message that repeats in the terminal, once
+per probed camera index, comes from native code and is not part of this task;
+it can be reduced later by stopping the scan after the first denied index if
+that proves possible.
+
+### DC-U9 Delete without an error notice
+
+- **Type**: fix
+- **Status**: Not started
+- **Depends on**: DC-U5
+- **Requirements**: R5.3
+- **Design**: DC 4.1
+
+**Description.** Found in manual test 5.3 (`manual-tests.md`, section 4).
+Deleting a sample on the Review page works, but a notice then shows "no sample
+<id>" with the code `not_found`. The likely cause is that the delete changes
+the samples revision in the state, and the page then asks for the details of
+the selected sample, which is the one just deleted, before the selection has
+moved to a neighbour. Find the cause, and make the delete leave no notice.
+
+**Acceptance criteria.**
+
+- [ ] The cause is found and written in the implementation notes, after
+      reproducing the notice (a test or a recorded run).
+- [ ] Deleting the selected sample moves the selection to the next sample, or
+      to the previous one at the end of the list, and shows no notice.
+- [ ] Deleting a sample from another browser tab, or by the command line,
+      while a page has it selected, also leaves no notice, and the selection
+      moves on.
+- [ ] A real failure of a request (for example the server is down) still
+      shows a notice.
+- [ ] A test covers the delete of the selected, the last and the only sample.
+
+**Implementation notes.** `static/app/review.js`: the effect that fetches the
+details of the selected sample runs on `selected` and `samplesRevision`, and
+`load` moves the selection. Compare `DC-U5`'s `nextSelection`. A 404 for a
+sample that is no longer in the list can be ignored, but only for the sample
+that was deleted, not for all requests.
+
+### DC-U10 Review grid and Space key
+
+- **Type**: feat
+- **Status**: Not started
+- **Depends on**: DC-U5, DC-U9
+- **Requirements**: R5.1, R5.3
+- **Design**: DC 4.1
+
+**Description.** Two changes to the Review page, from manual testing. The path
+images (tiles) form a horizontal strip, so the user has to scroll sideways to
+see them. Show them as a grid that wraps at the page width, so many samples
+are visible at once. Also, reject and restore move to the Space key, which is
+easy to reach next to the arrow keys.
+
+**Acceptance criteria.**
+
+- [ ] The tiles wrap onto new rows at the page width, with no horizontal
+      scroll at any window width, and the page scrolls vertically when there
+      are more tiles than fit.
+- [ ] The selected tile is always scrolled into view, also after stepping with
+      the arrow keys, and is clearly marked. A rejected tile is shown dimmed as
+      before.
+- [ ] Left and Right still select the previous and next sample in capture
+      order, across rows. Up and Down move the selection by one row.
+- [ ] Space rejects the selected sample if it is accepted, and restores it if
+      it is rejected. The letter `r` still does the same.
+- [ ] A shortcut can be bound to more than one key: the `reject` setting takes
+      a single key or a list of keys, the default is `[" ", "r"]`, and the
+      buttons show the first key.
+- [ ] Space does not scroll the page, and does nothing while a button, a field
+      or a dialog has the focus, so it never acts twice.
+- [ ] Tests cover wrapping, the selection by row, Space and `r`, and the focus
+      guard.
+
+**Implementation notes.** `static/app/review.js` (the `.strip` element and its
+CSS in `static/style.css`), `static/app/shortcuts.js` (`isTyping` already
+ignores fields; extend it to buttons for Space), `Shortcuts` in `settings.py`
+and `config/data-collection.yaml`. Page size for the sample list may have to
+change if the grid is large (DC-A8).
+
+### DC-U11 Notices and page polish
+
+- **Type**: fix
+- **Status**: Not started
+- **Depends on**: DC-U1, DC-U2
+- **Requirements**: none (usability)
+- **Design**: DC 4.1
+
+**Description.** Three small problems found in manual testing. A "Loading..."
+text shows at the bottom of every page: `index.html` puts it inside the
+element the page is drawn into, and drawing adds to that element and does not
+replace what is in it. Notices at the top of the page stay until the user
+dismisses them, so they pile up. The camera selector and the refresh button on
+the Setup page are not aligned.
+
+**Acceptance criteria.**
+
+- [ ] The "Loading..." text is gone from every page once the application has
+      started. It may still show before the scripts run, and then disappears
+      when the first page is drawn.
+- [ ] A notice dismisses itself after 6 seconds, and shows a thin bar that
+      shrinks to show the time left. Pausing the pointer over a notice stops
+      the timer, and it restarts when the pointer leaves. Clicking dismiss
+      still removes it at once.
+- [ ] A notice for an error that is repeated (the same message and code)
+      shown while the first is visible restarts the timer of the first and
+      does not add another.
+- [ ] The camera selector and the refresh button on the Setup page have the
+      same height and share a baseline, at any window width.
+- [ ] The shrinking bar respects the reduced motion setting of the browser:
+      the notice still disappears, and the bar is not animated.
+- [ ] Tests cover the timer, the pause and the repeat.
+
+**Implementation notes.** `static/index.html`, `static/app/notices.js` (an
+`expiresAt` per item, and a timer owned by the component in `main.js`), CSS in
+`static/style.css`, and the selector row in `static/app/setup.js`.
+
+### DC-U12 Save to the loaded profile
+
+- **Type**: feat
+- **Status**: Not started
+- **Depends on**: DC-U3
+- **Requirements**: R1.6
+- **Design**: DC 3.3, 4.1
+
+**Description.** On the Calibrate page the user can only save the settings
+under a name typed into a field. To update the profile that is already loaded,
+the user has to type its name again. Add a button that saves the current
+settings over the loaded profile.
+
+**Acceptance criteria.**
+
+- [ ] When a profile is loaded, the Profiles panel shows a button "Save to
+      <name>", beside the name field, that saves the current settings under
+      that name with the same request as the existing save.
+- [ ] Saving over a profile replaces it, so the button asks for no
+      confirmation, and shows a notice that the profile was saved. (The name
+      field still asks nothing for a new name.)
+- [ ] The button is not shown when no profile is loaded, and is disabled while
+      the settings are locked by a session.
+- [ ] After the settings differ from the loaded profile, the panel says so
+      ("changed since loaded"), so the user knows a save would change it.
+      After a save, or a load of a profile, it does not.
+- [ ] Typing a name that already exists in the name field and pressing Save
+      overwrites it as before.
+- [ ] Tests cover the button, its absence without a loaded profile, and the
+      changed marker.
+
+**Implementation notes.** `static/app/calibrate/profiles.js` (`loaded` comes
+from `snapshot.settings.profile`). For the changed marker compare the state's
+vision and motion settings with the profile as returned by the server; if
+there is no endpoint that returns the profile's settings, add one in DC-A5.
+
+### DC-U13 Keyboard scrubbing
+
+- **Type**: feat
+- **Status**: Not started
+- **Depends on**: DC-U7
+- **Requirements**: R7.5
+- **Design**: DC 4.1
+
+**Description.** The scrubbing view can only be used with the mouse. Add
+keyboard control, so a sample can be examined with the hands on the keyboard.
+
+**Acceptance criteria.**
+
+- [ ] Left and Right step one frame back and forward, and Shift with an arrow
+      steps ten frames.
+- [ ] Space plays and pauses, and does not scroll the page or press a focused
+      button.
+- [ ] Home and End go to the first and the last frame.
+- [ ] F enters and leaves full screen, and V shows and hides the video.
+- [ ] Escape leaves full screen first (as the browser does) and, pressed again,
+      closes the view.
+- [ ] The controls show their keys, for example `Space`, as the Review page
+      does, and the keys are listed in a short line under the view.
+- [ ] The keys do not act while a field has the focus. The keys of the Review
+      page are not active while the view is open.
+- [ ] Tests cover each key, the guard and the closing of the view.
+
+**Implementation notes.** `static/app/scrub.js` has no key handling today. Use
+`createShortcuts` so keys come from the settings (new actions `scrubPlay`,
+`scrubBack`, `scrubForward` and so on), with the defaults above. A full-screen
+request must come from a key or click event handler.
+
+### DC-U14 Scrubbing without a clip
+
+- **Type**: feat
+- **Status**: Not started
+- **Depends on**: DC-U7, DC-U13
+- **Requirements**: R6.9, R7.5
+- **Design**: DC 4.1
+
+**Description.** A sample without a clip cannot be scrubbed today. The sample
+still has its positions, with a time for each, so its path can be replayed on a
+black background without any video. This changes the criterion of DC-U7 that
+says the view is not offered for a sample without a clip: it is now offered
+always, and only the video is missing.
+
+**Acceptance criteria.**
+
+- [ ] The scrubbing view opens for a sample without a clip, from the Review
+      and Browse pages, and shows its path on a black background, with the part
+      up to the current position highlighted.
+- [ ] Playback follows the positions' times: it runs from the first position to
+      the last in the time the gesture took, and a gap where the tip was not
+      found shows as a pause.
+- [ ] Stepping goes from one stored position to the next. The slider covers the
+      gesture's duration, and the keys of DC-U13 work.
+- [ ] The Show video button is disabled and says that there is no clip. V does
+      nothing.
+- [ ] For a sample with a clip the view is as before.
+- [ ] DC-U7's criterion is updated to say that the view is offered for every
+      sample, and `manual-tests.md` step 7.4 expects the scrubbing view to work
+      without video.
+- [ ] Tests cover playback timing with a gap, stepping, and the disabled
+      button.
+
+**Implementation notes.** `static/app/scrub.js`: for a sample with a clip the
+video's time drives the display (`countUpTo`); without one, a timer driven by
+`requestAnimationFrame` plays the same role. Keep one code path for drawing.
 
 ## 10. Verification tasks
 

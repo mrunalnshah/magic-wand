@@ -25,7 +25,7 @@ column is filled in by task DC-S2.
 
 | Run | Computer and OS | Camera | Browser | Date |
 |---|---|---|---|---|
-| macOS | | | | |
+| macOS | macOS (Darwin 25.6.0) | Built-in, external webcam and iPhone | Chrome | 2026-11-14 |
 | Linux | | | | |
 
 ## 2. Steps
@@ -141,7 +141,7 @@ column is filled in by task DC-S2.
   after the last one.
 
 - **6.3** End the session, then try Resume.
-  Expect: Resume is refused with a reason. Review works and edits are saved.
+  Expect: The session has no Resume button (R2.6, DC-U2); the server also refuses it with a reason. Review works and edits are saved.
 
 - **6.4** Start a session, stop the application, unplug the camera, start again
   and resume.
@@ -169,48 +169,53 @@ column is filled in by task DC-S2.
 
 | Step | macOS | Linux |
 |---|---|---|
-| 0.1 | | n/a |
-| 0.2 | |  |
-| 0.3 | |  |
-| 1.1 | |  |
-| 1.2 | |  |
-| 1.3 | |  |
-| 1.4 | |  |
-| 2.1 | |  |
-| 2.2 | |  |
-| 2.3 | |  |
-| 2.4 | |  |
-| 3.1 | |  |
-| 3.2 | |  |
-| 3.3 | |  |
-| 3.4 | |  |
-| 4.1 | |  |
-| 4.2 | |  |
-| 4.3 | |  |
-| 4.4 | |  |
-| 4.5 | |  |
-| 4.6 | |  |
-| 5.1 | |  |
-| 5.2 | |  |
-| 5.3 | |  |
-| 5.4 | |  |
-| 5.5 | |  |
-| 6.1 | |  |
-| 6.2 | |  |
-| 6.3 | |  |
-| 6.4 | |  |
-| 6.5 | |  |
-| 7.1 | |  |
-| 7.2 | |  |
-| 7.3 | |  |
-| 7.4 | |  |
-| 2.1A, 2.1B, 2.1C | | |
-| 2.2A, 2.2B, 2.2C | | |
-| 2.3A, 2.3B, 2.3C | | |
-| 2.4A, 2.4B, 2.4C | | |
+| 0.1 | pass | n/a |
+| 0.2 | pass |  |
+| 0.3 | pass |  |
+| 1.1 | pass |  |
+| 1.2 | pass |  |
+| 1.3 | pass |  |
+| 1.4 | pass |  |
+| 2.1 | pass |  |
+| 2.2 | pass |  |
+| 2.3 | pass |  |
+| 2.4 | pass |  |
+| 3.1 | pass |  |
+| 3.2 | pass |  |
+| 3.3 | pass |  |
+| 3.4 | pass |  |
+| 4.1 | pass |  |
+| 4.2 | pass |  |
+| 4.3 | pass |  |
+| 4.4 | pass |  |
+| 4.5 | pass |  |
+| 4.6 | pass |  |
+| 5.1 | pass |  |
+| 5.2 | pass |  |
+| 5.3 | pass |  |
+| 5.4 | pass |  |
+| 5.5 | pass |  |
+| 6.1 | pass |  |
+| 6.2 | pass |  |
+| 6.3 | pass |  |
+| 6.4 | fail |  |
+| 6.5 | n/a |  |
+| 7.1 | pass |  |
+| 7.2 | pass |  |
+| 7.3 | pass |  |
+| 7.4 | pass |  |
+| 2.1A, 2.1B, 2.1C | A pass, B and C n/a | |
+| 2.2A, 2.2B, 2.2C | A pass, B and C n/a | |
+| 2.3A, 2.3B, 2.3C | A pass, B and C n/a | |
+| 2.4A, 2.4B, 2.4C | A pass, B and C n/a | |
 
 ## 4. Follow-up tasks
 
 | Problem found | Task |
 |---|---|
-| | |
+| 0.3: with camera access denied, the terminal repeats the OpenCV "camera access has been denied" message about ten times (once per probed camera), and the UI says only "No cameras were found" without naming the permission. Minor. | DC-U8 |
+| 1.4: the measured rate is far below 30 fps and varies between measurements: built-in 18.2 then about 24, iPhone 17.6 then about 24, external 3.1 then 0.4, although the external feed looks smooth. The rate is measured once, over the first 2 seconds after the camera opens, so a startup stall gives a wrong number that stays until the camera is reopened. The step passes because the warning is shown. | DC-A14 |
+| 5.3: deleting a sample works, but a toast then shows "no sample <id> not_found". Probably the page asks for the details of the sample it has just deleted, because the samples revision changes before the selection moves on. Not reproduced yet. | DC-U9 |
+| 6.4: Resume after unplugging the external camera succeeded on the built-in camera, and tracking then failed because the calibration belonged to the other camera. On macOS the camera is identified by its index, which changes when a camera is unplugged. Both sessions in the test folder record `index:0`. | DC-A15 |
+| 6.3: the original step expected a refused Resume, but the page offers no Resume for an ended session, as designed. The step now says so. | none |
+| 6.5: not tested, no second camera that delivers a different mode. | none |
