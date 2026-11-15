@@ -272,10 +272,16 @@ export function Scrub({ id, details, onClose, shortcuts }) {
     (details.mirrored ? " mirrored" : "") +
     (masked || !hasVideo ? " masked" : "");
   const [width, height] = details.frameSize || [4, 3];
+  // A definite width: as wide as the frame, up to 640 px or the room there is
+  // (a box that sizes to its content would collapse to nothing without a
+  // video in it), and no taller than 80% of the window.
+  const boxStyle = hasVideo
+    ? undefined
+    : { width: `min(100%, 640px, calc(80vh * ${width} / ${height}))` };
 
   return html`<section class="scrub" ref=${stage}>
     <div class="frame">
-      <div class=${boxClass}>
+      <div class=${boxClass} style=${boxStyle}>
         ${hasVideo
           ? html`<video
               ref=${video}

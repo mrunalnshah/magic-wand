@@ -2162,6 +2162,13 @@ always, and only the video is missing.
 - [x] Tests cover playback timing with a gap, stepping, and the disabled
       button.
 
+**Layout fix.** Found by the user: without a video the view showed only the
+controls, with a zero-height picture. The box that holds the path sized itself
+to its content, which was empty, and the surface inside it used a percentage
+width, which resolves to nothing there (measured in Chrome: 0 by 0). The box
+now has a definite width (`min(100%, 640px, 80vh` scaled by the frame's
+shape`)`), measured in Chrome at three window sizes and two frame shapes.
+
 **Implementation notes.** `static/app/scrub.js`: for a sample with a clip the
 video's time drives the display (`countUpTo`); without one, a timer driven by
 `requestAnimationFrame` plays the same role. Keep one code path for drawing.

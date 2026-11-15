@@ -696,9 +696,10 @@ td.rejected {
   opacity: 0; /* still plays and keeps its size; only the path shows */
 }
 
+/* Without a clip the box has no video to give it a size, so the page sets a
+   definite width on it (see scrub.js) and the surface fills it. */
 .scrub .blank {
-  width: min(100%, 640px);
-  max-height: 80vh;
+  width: 100%;
 }
 
 .scrub video {
