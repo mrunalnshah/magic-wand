@@ -146,6 +146,8 @@ export function Review({ snapshot, shortcuts, notices }) {
   }, [selected, snapshot.samplesRevision]);
 
   const hasClip = Boolean(details && details.hasClip);
+  // Known to have no clip (not just still loading the details).
+  const noClip = Boolean(details) && !details.hasClip;
   const showOverlay = overlay && hasClip;
   const index = items.findIndex((item) => item.id === selected);
   const current = index >= 0 ? items[index] : null;
@@ -279,18 +281,13 @@ export function Review({ snapshot, shortcuts, notices }) {
               disabled=${!hasClip}
               onClick=${() => setOverlay(true)}
             >
-              Overlay on camera frame
+              ${noClip ? "Video unavailable" : "Overlay on camera frame"}
             </button>
             <kbd>${shortcuts.keyFor("toggleView")}</kbd>
             <button disabled=${!details} onClick=${() => setScrubbing(true)}>
               ${hasClip ? "Scrub video" : "Scrub path"}
             </button>
           </div>
-          ${!hasClip &&
-          html`<p class="hint">
-            There is no video clip for this sample, so the camera frame is
-            not available.
-          </p>`}
         </div>
       </div>
       <div>
