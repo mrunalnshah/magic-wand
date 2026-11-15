@@ -5,6 +5,7 @@
 
 import { api } from "../api.js";
 import { html } from "../html.js";
+import { CameraPanel } from "../setup.js";
 import { useSelector } from "../state.js";
 import { ColorCalibration } from "./color.js";
 import { MotionTuning } from "./motion.js";
@@ -62,22 +63,72 @@ function StartSession({ snapshot, store, notices, goTo }) {
   </section>`;
 }
 
+// After a resume: check that the camera is the one the session used, with the
+// settings locked to what it was recorded with. Only the camera can change.
+// Continuing records the camera in use as the session's camera.
+function CameraCheck({ snapshot, notices, goTo }) {
+  const session = snapshot.session;
+  const confirm = async () => {
+    const done = await notices.attempt(() =>
+      api.post("/api/sessions/current/camera/confirm"),
+    );
+    if (done !== undefined) goTo("record");
+  };
+  const end = () =>
+    notices.attempt(() => api.post("/api/sessions/current/end"));
+  return html`<section class="panel start">
+      <h3>Check the camera</h3>
+      <p>
+        ${session.name} was resumed. It was recorded with
+        ${session.recordedCamera || "an unknown camera"}. The settings are
+        locked to what the session was recorded with, so only the camera can
+        change. In the live view, switch to the mask and check that the wand
+        is tracked. If the camera is not the one you used before, choose it
+        below.
+      </p>
+      <p class="hint">
+        If you continue with a different camera, the session record takes it
+        from then on.
+      </p>
+      <div class="row">
+        <button disabled=${!snapshot.camera.device} onClick=${confirm}>
+          Continue to Record
+        </button>
+        <button onClick=${end}>End session</button>
+      </div>
+    </section>
+    <${CameraPanel}
+      snapshot=${snapshot}
+      notices=${notices}
+      preview=${false}
+    />`;
+}
+
 export function Calibrate({ snapshot, store, notices, goTo }) {
   const locked = isLocked(snapshot);
+  const checking = locked && Boolean(snapshot.session.cameraCheck);
   const { vision, motion, profile } = snapshot.settings;
   return html`<section class="calibrate">
     <h2>Calibrate</h2>
     ${locked &&
     html`<p class="locked" role="status">
-      Settings are locked while a session is capturing. End the session to
-      calibrate.
+      ${checking
+        ? "Settings are locked to what the session was recorded with."
+        : "Settings are locked while a session is capturing. " +
+          "End the session to calibrate."}
     </p>`}
-    <${StartSession}
-      snapshot=${snapshot}
-      store=${store}
-      notices=${notices}
-      goTo=${goTo}
-    />
+    ${checking
+      ? html`<${CameraCheck}
+          snapshot=${snapshot}
+          notices=${notices}
+          goTo=${goTo}
+        />`
+      : html`<${StartSession}
+          snapshot=${snapshot}
+          store=${store}
+          notices=${notices}
+          goTo=${goTo}
+        />`}
     <div class="columns">
       <div>
         <${ColorCalibration}

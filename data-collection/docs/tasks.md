@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 17 | **Updated** 2026-11-14 | **Approved**
+> **Version** 18 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -118,7 +118,8 @@ fields are snake case; in JSON and YAML they are camel case
 - An error returns a non-2xx status and the body
   `{"error": {"code": "...", "message": "..."}}`. Codes: `invalid_request`
   (400), `not_found` (404), `session_active`, `no_session`, `session_ended`,
-  `camera_unavailable`, `label_in_use` and `not_capturing` (all 409).
+  `camera_unavailable`, `label_in_use`, `not_capturing`, `camera_check` and
+  `no_camera_check` (all 409).
 
 ## 3. Summary
 
@@ -157,7 +158,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-A12 | Session deletion | Completed |
 | DC-A13 | Session name and notes | Completed |
 | DC-A14 | Frame-rate measurement | Completed |
-| DC-A15 | Camera identity on macOS | Not started |
+| DC-A15 | Camera check on resume | Completed |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
 | DC-U3 | Calibrate page | Completed |
@@ -1283,11 +1284,11 @@ Application State.
   capture, which locks the settings.
 - `POST /api/sessions/{id}/load?mode=review|resume`. Review works for any
   session and records it as loaded for review only. Resume works only for open
-  sessions: 409 `session_ended` for an ended one. It opens the camera recorded
-  in the session by its device identifier; if that device is not among the
-  available cameras it returns 409 `camera_unavailable` naming it. It then
-  gives the recorded settings to the Calibration Service and records the
-  session as loaded for capture. If the camera delivers a different mode than
+  sessions: 409 `session_ended` for an ended one. It opens the camera that best
+  matches the recorded one (DC-A15) and returns 409 `camera_unavailable` only
+  when there is no camera at all. It then gives the recorded settings to the
+  Calibration Service and records the session as loaded for capture with a
+  camera check pending (DC-A15). If the camera delivers a different mode than
   recorded, it still resumes and returns a warning in the response.
 - `POST /api/sessions/current/end`: for a session loaded for capture it sets
   `endedAt`, tells the Capture Controller to stop, and clears the session in the
@@ -1304,9 +1305,10 @@ Application State.
       application leaves the session open on disk, and it is listed as open.
 - [x] An ended session cannot be resumed, but can be loaded for review and its
       samples edited.
-- [x] Resume is refused when the recorded camera is unavailable, and the refusal
-      names the camera. It succeeds with the camera present and applies the
-      recorded settings, which the Calibrate page then shows.
+- [x] Resume succeeds with the camera present and applies the recorded
+      settings, which the Calibrate page then shows. (Changed by DC-A15: it is
+      no longer refused when the recorded camera is missing, but it is refused
+      with no camera at all.)
 - [x] Sample numbers continue from the highest number after a delete and after a
       resume.
 - [x] A load while another session is loaded for capture is refused.
@@ -1539,54 +1541,59 @@ measurement up to date while the camera runs.
 timestamps is enough. The clip writer already uses each frame's capture time, so
 clips and positions are not affected by this task; the clip's nominal rate is.
 
-### DC-A15 Camera identity on macOS
+### DC-A15 Camera check on resume
 
-- **Type**: fix
-- **Status**: Not started
-- **Depends on**: DC-A9, DC-L1
+- **Type**: feat
+- **Status**: Completed
+- **Depends on**: DC-A9, DC-U2, DC-U3
 - **Requirements**: R2.6
-- **Design**: DC 3.2, 4.5; Lib 5
+- **Design**: DC 3.2, 4.5
 
 **Description.** Found in manual test 6.4 (`manual-tests.md`, section 4). A
-session records the camera as a device identifier. macOS gives OpenCV no camera
-names, so the identifier is `index:<n>` and means only "the n-th camera the
-system lists". The order changes when a camera is unplugged or another is
-connected, so a session recorded with an external camera at index 0 resumed on
-the built-in camera, which then became index 0. R2.6 requires that resuming is
-blocked when the recorded camera is unavailable or is a different camera. The
-resumed session also applies the vision settings calibrated for the first camera,
-so tracking fails on the other one. Give each camera an identifier that
-stays the same when the set of cameras changes, and use it to match the camera
-on resume.
+session records its camera as a device identifier, which on macOS is only
+`index:<n>`, the position in the list. The position changes when a camera is
+unplugged, so a resumed session opened the built-in camera in place of the
+external one, silently, with settings calibrated for the other camera. Naming
+cameras by the system's names was tried and dropped: macOS reorders the camera
+list as cameras are opened, so a position cannot reliably be matched with a
+name (the Setup page showed one camera twice), and the fix would have needed
+macOS-only code. Instead the user checks the camera by sight after every
+resume. The app opens the best match, shows the Calibrate page with all
+settings read-only except the camera, and waits for the user to continue.
 
 **Acceptance criteria.**
 
-- [ ] On macOS each listed camera has its name and a stable unique identifier
-      from the system, and the session records both. The name is shown on the
-      Setup page in place of `index:<n>`.
-- [ ] The identifier of a camera is the same before and after another camera
-      is unplugged or plugged in, and the index used to open it is looked up from
-      it each time.
-- [ ] Resume finds the recorded camera by its identifier. When it is not
-      connected, Resume is refused with a message that names the camera, even if
-      another camera is available.
-- [ ] Where no stable identifier is available (for example a Linux camera
-      without a name), the session records the index, and Resume proceeds only
-      with a warning that the camera cannot be verified, and shows the camera now
-      in use.
-- [ ] Sessions recorded before this change (identifier `index:<n>`) still
-      load, and Resume treats them as in the previous criterion.
-- [ ] Tests cover a changed camera order, a missing camera and an old-style
-      identifier, using a fake camera lister.
+- [x] Resume opens the recorded camera when it is found by its device
+      identifier, otherwise the one at the recorded position, otherwise the
+      camera in use, otherwise the first one. It is refused only when there is
+      no camera at all, and the message names the recorded camera.
+- [x] After a resume the state's session has `cameraCheck` true and the
+      `recordedCamera`. While it is set, the camera can be changed (Setup and
+      Calibrate), settings and profiles stay locked, and `POST /api/recording/
+      start` is refused with 409 `camera_check`.
+- [x] `POST /api/sessions/current/camera/confirm` clears the check and writes
+      the camera in use (device, index, requested and actual mode) to the
+      session record, so a changed camera is recorded from then on. It is
+      refused with 409 `no_camera_check` when no check is due, and with
+      `camera_unavailable` when there is no camera in use. Editing the
+      session's name or notes does not clear the check.
+- [x] Resume (from the session list, or of the loaded session) opens the
+      Calibrate page, which shows a "Check the camera" panel naming the recorded
+      camera, the camera selector, "Continue to Record" (disabled without a
+      camera) and "End session". The live view and mask are those of the
+      Calibrate page.
+- [x] The Record page's Start is disabled with an explanation while the check
+      is due.
+- [x] Tests cover each of these, and the requirement, design and earlier
+      tasks that said resume is refused now say what happens.
 
-**Implementation notes.** `list_cameras` and `camera_name` in
-`wand_core/sources.py`, `SessionService._find_camera`. On macOS the names and
-unique identifiers come from AVFoundation, for example through
-`pyobjc-framework-AVFoundation` as a macOS-only dependency. The order that
-AVFoundation lists devices in has to be checked against the order OpenCV uses
-for its indices on a machine with several cameras (built-in, external and
-iPhone), because the match depends on it. If they differ, open the camera by
-the AVFoundation identifier instead of by index.
+**Implementation notes.** `SessionService._find_camera`, `confirm_camera` and
+`_resume`; `SessionInfo.camera_check` and `recorded_camera` in `state.py`;
+`CaptureController.post_start`; `CalibrationService._require_camera_changeable`;
+`CameraCheck` in `static/app/calibrate/index.js`; `cameraLocked` in
+`static/app/setup.js`. The session keeps one camera in its record: a session
+that is continued on a different camera has the later camera recorded, and the
+earlier samples keep the position data, which is normalized and so unaffected.
 
 ## 9. Web UI tasks
 
@@ -1665,8 +1672,10 @@ opens an existing one.
 - [x] Each session has an Edit button that opens a form for its name and
       notes (DC-A13), enabled for every session, and the notes are shown under
       the name.
-- [x] A refused resume (ended session or unavailable camera) shows the reason
+- [x] A refused resume (an ended session, or no camera at all) shows the reason
       from the error. A resume warning about a different camera mode is shown.
+      A resume that succeeds opens the Calibrate page for the camera check
+      (DC-A15), not Record.
 - [x] While a session is loaded for capture, the form and the Resume of other
       sessions are disabled and a notice says to end the session first. The
       Resume of the loaded session stays enabled: it resumes a paused capture
@@ -2169,7 +2178,7 @@ checklist.
 - [x] A checklist document exists (a new document with the standard header)
       covering camera selection, calibration under different lighting and
       backgrounds, motion tuning, a capture run, pause and review, resume,
-      missing-camera resume refusal, merge, and the missing-clip behavior.
+      camera check on resume, merge, and the missing-clip behavior.
 - [ ] It has been run on macOS, and the results are recorded in the document
       with a column left for Linux (filled in by DC-S2).
 - [ ] The live view keeps up with the camera, and no dropped frames corrupt

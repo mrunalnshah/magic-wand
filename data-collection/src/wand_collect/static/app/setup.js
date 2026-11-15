@@ -72,10 +72,16 @@ export function NoCameras({ mac, onRetry }) {
   </div>`;
 }
 
-export function CameraPanel({ snapshot, notices }) {
+// The camera can change unless a session is capturing, except while the
+// camera of a resumed session is being checked.
+export function cameraLocked(snapshot) {
+  return isCapturing(snapshot) && !snapshot.session.cameraCheck;
+}
+
+export function CameraPanel({ snapshot, notices, preview = true }) {
   const [cameras, setCameras] = useState(null);
   const camera = snapshot.camera;
-  const locked = isCapturing(snapshot);
+  const locked = cameraLocked(snapshot);
   const inUse =
     `In use: ${camera.device}, asked for ${describeMode(camera.requested)}, ` +
     `delivering ${describeMode(camera.actual, camera.fpsMeasured)}.`;
@@ -123,7 +129,8 @@ export function CameraPanel({ snapshot, notices }) {
       The camera delivers a different mode than was asked for. Recordings
       will use ${describeMode(camera.actual, camera.fpsMeasured)}.
     </p>`}
-    ${camera.device &&
+    ${preview &&
+    camera.device &&
     html`<img class="live" src="/api/stream" alt="Live camera view" />`}
   </section>`;
 }
@@ -296,11 +303,17 @@ function SessionList({ snapshot, notices, goTo }) {
     );
     if (!loaded) return;
     (loaded.warnings || []).forEach((text) => notices.add(text, "warning"));
-    goTo(mode === "resume" ? "record" : "review");
+    // A resumed session starts with a check of the camera, on Calibrate.
+    if (mode === "resume") goTo(loaded.cameraCheck ? "calibrate" : "record");
+    else goTo("review");
   };
 
   // The session already loaded for capture continues where it paused.
   const continueCurrent = async () => {
+    if (session.cameraCheck) {
+      goTo("calibrate"); // the camera has not been checked yet
+      return;
+    }
     if (snapshot.capture.state === "PAUSED") {
       const done = await notices.attempt(() =>
         api.post("/api/recording/resume"),

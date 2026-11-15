@@ -314,10 +314,24 @@ def test_resume_applies_the_recorded_settings_and_locks(rig):
     assert rig.opened[-1] == (0, 640, 480, FPS)
 
 
-def test_resume_is_refused_when_the_camera_is_missing(rig):
+def test_resume_does_not_need_the_recorded_camera_but_asks_for_a_check(rig):
     session_id = start_and_close(rig)
     rig.engine.close_camera().result(2)
     rig.cameras = [CameraInfo(0, "Other Cam", "Other Cam")]
+    response = rig.client.post(f"/api/sessions/{session_id}/load?mode=resume")
+    assert response.status_code == 200
+    assert response.json()["cameraCheck"] is True
+    session = rig.state.snapshot.session
+    assert session.role is SessionRole.CAPTURE
+    assert session.camera_check
+    assert session.recorded_camera == "Test Cam"
+    assert rig.opened[-1][0] == 0  # the camera that is there
+
+
+def test_resume_without_any_camera_is_refused(rig):
+    session_id = start_and_close(rig)
+    rig.engine.close_camera().result(2)
+    rig.cameras = []
     before = rig.state.snapshot
     response = rig.client.post(f"/api/sessions/{session_id}/load?mode=resume")
     assert response.status_code == 409
@@ -325,7 +339,60 @@ def test_resume_is_refused_when_the_camera_is_missing(rig):
     assert error["code"] == "camera_unavailable"
     assert "Test Cam" in error["message"]
     assert rig.state.snapshot.session == before.session
-    assert rig.state.snapshot.settings == before.settings
+
+
+def test_the_camera_can_change_only_while_it_is_being_checked(rig):
+    session_id = start_and_close(rig)
+    rig.engine.close_camera().result(2)
+    rig.client.post(f"/api/sessions/{session_id}/load?mode=resume")
+    # While the camera is checked: the camera may change, settings may not.
+    assert rig.client.put("/api/camera", json={"index": 0}).status_code == 204
+    locked = rig.client.put("/api/settings", json={"vision": {"hueCenter": 3}})
+    assert locked.status_code == 409
+    assert (
+        rig.client.post("/api/sessions/current/camera/confirm").status_code
+        == 204
+    )
+    # After it: nothing changes.
+    after = rig.client.put("/api/camera", json={"index": 0})
+    assert after.status_code == 409
+    assert after.json()["error"]["code"] == "session_active"
+
+
+def test_confirming_records_the_camera_in_use_and_unlocks_capture(rig):
+    session_id = start_and_close(rig)
+    rig.engine.close_camera().result(2)
+    rig.client.post(f"/api/sessions/{session_id}/load?mode=resume")
+    # The user switched to another camera while checking.
+    rig.engine.open_source(FakeSource(*rig.size), "Other Cam", 1).result(2)
+    assert (
+        rig.client.post("/api/sessions/current/camera/confirm").status_code
+        == 204
+    )
+    record = session_on_disk(rig, session_id)
+    assert record.camera.device == "Other Cam"
+    assert record.camera.index == 1
+    assert (
+        record.vision_settings
+        == session_on_disk(rig, session_id).vision_settings
+    )
+    session = rig.state.snapshot.session
+    assert not session.camera_check and session.recorded_camera is None
+
+
+def test_confirming_without_a_check_is_refused(rig):
+    rig.start()
+    response = rig.client.post("/api/sessions/current/camera/confirm")
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "no_camera_check"
+
+
+def test_editing_the_name_keeps_the_camera_check(rig):
+    session_id = start_and_close(rig)
+    rig.engine.close_camera().result(2)
+    rig.client.post(f"/api/sessions/{session_id}/load?mode=resume")
+    rig.client.patch(f"/api/sessions/{session_id}", json={"name": "New"})
+    assert rig.state.snapshot.session.camera_check
 
 
 def test_resume_opens_the_recorded_camera(rig):

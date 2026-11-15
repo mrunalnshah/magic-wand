@@ -1,6 +1,6 @@
 # Data Collection Application - Requirements
 
-> **Version** 11 | **Updated** 2026-11-14 | **Approved**
+> **Version** 12 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -78,8 +78,12 @@ this document:
   **resumed**; an ended session can only be reviewed. Review opens the
   session's samples as in R5, without capturing. Resume continues capturing
   into the same session: new samples are added to it, and it keeps its
-  recorded settings, which stay locked (R2.2). Resuming is blocked if the
-  camera recorded in the session is unavailable or is a different camera.
+  recorded settings, which stay locked (R2.2). A camera cannot always be
+  told from another (macOS gives no camera names, and the numbering changes
+  when a camera is unplugged), so a resumed session does not need the camera it
+  was recorded with. Instead, before capturing, the user checks the camera on
+  the Calibrate page, where only the camera can be changed, and continues. The
+  session record then takes the camera that is in use.
 - R2.7 **Ending a session.** A session ends only when the user ends it.
   Closing the application leaves the session open, so it can be resumed
   later. An ended session accepts no new samples, but its samples can still be

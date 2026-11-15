@@ -137,18 +137,26 @@ column is filled in by task DC-S2.
   Expect: The session is listed as open, with its sample count.
 
 - **6.2** Resume it on the Setup page.
-  Expect: Calibrate shows the recorded settings, and the next sample is numbered
-  after the last one.
+  Expect: The Calibrate page opens with "Check the camera": the settings show
+  the recorded values and are read-only, and only the camera can be changed.
+  After Continue to Record, the next sample is numbered after the last one.
 
 - **6.3** End the session, then try Resume.
   Expect: The session has no Resume button (R2.6, DC-U2); the server also refuses it with a reason. Review works and edits are saved.
 
 - **6.4** Start a session, stop the application, unplug the camera, start again
   and resume.
-  Expect: Resume is refused and the message names the camera.
+  Expect: Resume goes ahead on the camera that is available and opens the
+  Calibrate page for the camera check, which names the camera the session was
+  recorded with. Starting capture is not possible before Continue to Record.
 
 - **6.5** Resume with a camera that delivers another mode, if one is available.
   Expect: The session resumes and a warning names both modes.
+
+- **6.6** Resume, then choose a different camera on the Calibrate page and
+  continue.
+  Expect: Capture works with that camera, and the session's `camera` in
+  `session.json` is the new one.
 
 ### Check, merge, export and missing clips
 
@@ -200,6 +208,7 @@ column is filled in by task DC-S2.
 | 6.3 | pass |  |
 | 6.4 | fail |  |
 | 6.5 | n/a |  |
+| 6.6 | |  |
 | 7.1 | pass |  |
 | 7.2 | pass |  |
 | 7.3 | pass |  |
@@ -216,6 +225,6 @@ column is filled in by task DC-S2.
 | 0.3: with camera access denied, the terminal repeats the OpenCV "camera access has been denied" message about ten times (once per probed camera), and the UI says only "No cameras were found" without naming the permission. Minor. | DC-U8 |
 | 1.4: the measured rate is far below 30 fps and varies between measurements: built-in 18.2 then about 24, iPhone 17.6 then about 24, external 3.1 then 0.4, although the external feed looks smooth. The rate is measured once, over the first 2 seconds after the camera opens, so a startup stall gives a wrong number that stays until the camera is reopened. The step passes because the warning is shown. | DC-A14 |
 | 5.3: deleting a sample works, but a toast then shows "no sample <id> not_found". Probably the page asks for the details of the sample it has just deleted, because the samples revision changes before the selection moves on. Not reproduced yet. | DC-U9 |
-| 6.4: Resume after unplugging the external camera succeeded on the built-in camera, and tracking then failed because the calibration belonged to the other camera. On macOS the camera is identified by its index, which changes when a camera is unplugged. Both sessions in the test folder record `index:0`. | DC-A15 |
+| 6.4: Resume after unplugging the external camera succeeded on the built-in camera, and tracking then failed because the calibration belonged to the other camera. On macOS the camera is identified by its index, which changes when a camera is unplugged. Both sessions in the test folder record `index:0`. The camera list reorders as cameras are opened, so cameras cannot be matched by name reliably. | DC-A15 (camera check by sight); step 6.4 and the new 6.6 need to be run again |
 | 6.3: the original step expected a refused Resume, but the page offers no Resume for an ended session, as designed. The step now says so. | none |
 | 6.5: not tested, no second camera that delivers a different mode. | none |

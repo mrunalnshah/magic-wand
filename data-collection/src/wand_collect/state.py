@@ -64,9 +64,19 @@ class CaptureStatus(str, Enum):
 
 @dataclass(frozen=True)
 class SessionInfo:
+    """The loaded session.
+
+    ``camera_check`` is true after a resume until the user has checked the
+    camera (DC-A15): the settings are locked as for any capture session, but
+    the camera can still be changed, and capture cannot start. ``recorded
+    camera`` is the device the session was recorded with, for showing then.
+    """
+
     id: str
     name: str
     role: SessionRole
+    camera_check: bool = False
+    recorded_camera: str | None = None
 
 
 @dataclass(frozen=True)

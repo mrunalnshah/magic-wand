@@ -92,6 +92,12 @@ class SessionService:
             "/sessions/current/end", self.end, methods=["POST"], status_code=204
         )
         add(
+            "/sessions/current/camera/confirm",
+            self.confirm_camera,
+            methods=["POST"],
+            status_code=204,
+        )
+        add(
             "/sessions/{session_id}",
             self.patch,
             methods=["PATCH"],
@@ -202,7 +208,7 @@ class SessionService:
                 "session_ended",
                 "an ended session cannot be resumed; load it for review",
             )
-        index = self._find_camera(record.camera.device)
+        index = self._find_camera(record.camera.device, record.camera.index)
         requested = record.camera.requested or record.camera.actual
         width, height, fps = (
             (requested.width, requested.height, requested.fps)
@@ -222,8 +228,12 @@ class SessionService:
         self._calibration.apply_recorded_settings(
             record.vision_settings, record.motion_settings, record.profile
         )
-        self._record(record, SessionRole.CAPTURE)
+        # The camera that opened may not be the one the session used (a
+        # camera cannot always be told from another), so the user checks it
+        # before capturing; see ``confirm_camera``.
+        self._record(record, SessionRole.CAPTURE, camera_check=True)
         summary = _summary(record, SessionRole.CAPTURE)
+        summary["cameraCheck"] = True
         actual = self._state.snapshot.camera.actual
         if record.camera.actual and not _same_mode(
             record.camera.actual, actual
@@ -235,20 +245,71 @@ class SessionService:
             )
         return summary
 
-    def _find_camera(self, device: str | None) -> int:
-        """The index of the camera with this device identifier."""
-        if device is not None:
-            current = self._state.snapshot.camera
-            if current.device == device and current.index is not None:
-                return current.index  # in use, so it may not probe again
-            for camera in self._list_cameras():
-                if camera.device_id == device:
-                    return camera.index
+    def _find_camera(self, device: str | None, index: int | None) -> int:
+        """The camera to open for a resumed session: the recorded one when it
+        can be found, otherwise the best available.
+
+        A camera is not always told from another (macOS gives no names, so a
+        camera is only "the one at position N"), and the user checks the
+        camera in any case, so this never refuses because the recorded camera
+        is missing. It refuses only when there is no camera at all.
+        """
+        current = self._state.snapshot.camera
+        if (
+            device is not None
+            and current.device == device
+            and current.index is not None
+        ):
+            return current.index  # in use, so it may not probe again
+        listed = list(self._list_cameras())
+        for camera in listed:
+            if device is not None and camera.device_id == device:
+                return camera.index
+        if index is not None and any(c.index == index for c in listed):
+            return index
+        if current.index is not None:
+            return current.index
+        if listed:
+            return listed[0].index
         raise ConflictError(
             "camera_unavailable",
-            f"the camera recorded in this session ({device}) is not "
-            "available; connect it and try again",
+            f"no camera is available to resume the session (it was recorded "
+            f"with {device}); connect one and try again",
         )
+
+    # --- Camera check ----------------------------------------------------
+
+    def confirm_camera(self) -> None:
+        """The user has checked the camera of a resumed session.
+
+        The session record takes the camera that is now in use (the user may
+        have changed it), and capture can start.
+        """
+        with self._lock:
+            session = self._state.snapshot.session
+            if (
+                session is None
+                or session.role is not SessionRole.CAPTURE
+                or not session.camera_check
+            ):
+                raise ConflictError(
+                    "no_camera_check", "there is no camera to check"
+                )
+            camera = self._state.snapshot.camera
+            if camera.device is None:
+                raise ConflictError(
+                    "camera_unavailable", "there is no camera in use"
+                )
+            record = self._store.update_session(
+                session.id,
+                camera=CameraRecord(
+                    device=camera.device,
+                    index=camera.index,
+                    requested=_mode_record(camera.requested),
+                    actual=_mode_record(camera.actual),
+                ),
+            )
+            self._record(record, SessionRole.CAPTURE)
 
     # --- End -------------------------------------------------------------
 
@@ -286,7 +347,7 @@ class SessionService:
                 raise NotFoundError(str(error)) from error
             loaded = self._state.snapshot.session
             if loaded is not None and loaded.id == session_id:
-                self._record(record, loaded.role)
+                self._record(record, loaded.role, loaded.camera_check)
         return {
             "id": record.session_id,
             "name": record.name,
@@ -317,11 +378,20 @@ class SessionService:
                 "a session is already loaded for capture; end it first",
             )
 
-    def _record(self, record: SessionRecord, role: SessionRole) -> None:
+    def _record(
+        self,
+        record: SessionRecord,
+        role: SessionRole,
+        camera_check: bool = False,
+    ) -> None:
         self._state.update(
             Owner.SESSION_SERVICE,
             session=SessionInfo(
-                record.session_id, record.name or record.author, role
+                record.session_id,
+                record.name or record.author,
+                role,
+                camera_check,
+                record.camera.device if camera_check else None,
             ),
         )
 

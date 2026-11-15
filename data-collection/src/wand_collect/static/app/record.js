@@ -88,6 +88,8 @@ export function Record({ snapshot, shortcuts, notices }) {
     [notices],
   );
   const start = () => notices.attempt(() => api.post("/api/recording/start"));
+  // A resumed session waits for the camera check before it captures.
+  const checking = Boolean(snapshot.session && snapshot.session.cameraCheck);
   const pause = useCallback(() => {
     if (CAPTURING.includes(snapshot.capture.state)) {
       notices.attempt(() => api.post("/api/recording/pause"));
@@ -134,12 +136,19 @@ export function Record({ snapshot, shortcuts, notices }) {
               onChoose=${chooseLabel}
             />
             <button
-              disabled=${capture.state !== "STOPPED" || !active}
+              disabled=${capture.state !== "STOPPED" ||
+              !active ||
+              checking}
               onClick=${start}
             >
               Start
             </button>
           </div>
+          ${checking &&
+          html`<p class="locked" role="status">
+            The camera of this resumed session has not been checked yet. Check
+            it on the Calibrate page and continue from there.
+          </p>`}
           ${active &&
           html`<p class="count">
             <strong>${count}</strong>

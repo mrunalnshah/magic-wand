@@ -437,9 +437,19 @@ def test_the_whole_flow_through_the_http_interface(config):
             "POST", f"/sessions/{session_id}/load?mode=resume"
         ).json()
         assert resumed["role"] == "capture" and resumed["warnings"] == []
+        assert resumed["cameraCheck"] is True
         assert (
             again.state.snapshot.settings.vision == recorded_vision
         )  # the recorded
+        # Capture waits until the user has checked the camera.
+        again.api("PUT", "/recording/label", json={"label": "spell_three"})
+        wait_until(lambda: again.state.snapshot.active_label, "label")
+        early = again.api("POST", "/recording/start", expect=(409,))
+        assert early.status_code == 409
+        assert early.json()["error"]["code"] == "camera_check"
+        confirmed = again.api("POST", "/sessions/current/camera/confirm")
+        assert confirmed.status_code == 204
+        assert not again.state.snapshot.session.camera_check
         again.play(span(second, "pre"))
         again.api("PUT", "/recording/label", json={"label": "spell_three"})
         wait_until(lambda: again.state.snapshot.active_label, "label")

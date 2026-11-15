@@ -1,6 +1,6 @@
 # Data Collection Application - Design
 
-> **Version** 15 | **Updated** 2026-11-14 | **Approved**
+> **Version** 16 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -140,8 +140,12 @@ built from eleven components:
   be reviewed or resumed. An ended session can only be reviewed; it accepts no
   new samples, but its samples can still be edited in review.
 - **Resume** continues capturing into the same session with the settings
-  recorded in it, which stay locked. Calibration is skipped. The camera
-  recorded in the session must be available, or the resume is refused.
+  recorded in it, which stay locked. Calibration is skipped, except for a
+  **camera check**: the app opens the best match for the recorded camera, shows
+  the Calibrate page with every setting read-only except the camera, and
+  waits. The user looks at the live view and the mask, changes the camera if it
+  is not the one used before, and continues. The session record then takes the
+  camera in use, and capture can start. Capture cannot start before that.
 - **End** is requested by the user. It records the end time and stops
   capturing.
 
@@ -518,14 +522,18 @@ resuming, and the numbering of samples.
 - **Load for review**: any session. It records it in the Application State as
   loaded for review only, and opens review on the session's samples without
   starting capture.
-- **Resume**: only open sessions. It opens the camera recorded in the session,
-  identified by its stored device identifier. If that device is not among the
-  available cameras, because it is unplugged or the session was recorded with
-  another machine's camera, the resume is refused and the reason is shown. It
-  then hands the settings from the session record to the Calibration Service,
-  and records the session in the Application State as loaded for capture,
-  which locks them. If the camera delivers a different mode than the one
-  recorded, the app warns the user (R6.7) but continues.
+- **Resume**: only open sessions. It opens the camera that best matches the
+  recorded one: the device identifier if it is among the available cameras,
+  otherwise the recorded position, otherwise the camera in use or the first
+  one. A camera cannot always be told from another, so it never refuses
+  because the recorded camera is missing; it refuses only when there is no
+  camera at all. It then hands the settings from the session record to the
+  Calibration Service, and records the session in the Application State as
+  loaded for capture, which locks them, with `cameraCheck` set. While it is
+  set the camera can still be changed and capture cannot start.
+  `POST /api/sessions/current/camera/confirm` clears it and writes the camera
+  in use to the session record. If the camera delivers a different mode than
+  the one recorded, the app warns the user (R6.7) but continues.
 - **Edit details**: the name and the notes of any session, loaded or not, open
   or ended (R2.9). They are descriptions, not settings, so they stay editable
   when settings are locked. The new values are written to `session.json`
@@ -864,7 +872,8 @@ writes:
   the Capture Engine picks up changed settings on its next frame.
 - **Session Service**: start, end, list and load; an ended session cannot be
   resumed but can be reviewed and edited; closing the application leaves a
-  session open; resume is refused when the recorded camera is unavailable;
+  session open; resume needs a camera but not the recorded one, and capture waits for
+  the camera check;
   sample numbers continue after a delete and after a resume.
 - **Other services**: against a temporary data folder, including settings
   locking, label rules, Sample Library queries, and samples whose clip is

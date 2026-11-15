@@ -240,7 +240,13 @@ def test_json_uses_camel_case_and_keeps_data_keys():
     )
     text = state.snapshot.to_json()
     data = json.loads(text)
-    assert data["session"] == {"id": "s1", "name": "Desk", "role": "capture"}
+    assert data["session"] == {
+        "id": "s1",
+        "name": "Desk",
+        "role": "capture",
+        "cameraCheck": False,
+        "recordedCamera": None,
+    }
     assert data["capture"] == {
         "state": "COUNTDOWN",
         "countdownEndsAt": 12.5,

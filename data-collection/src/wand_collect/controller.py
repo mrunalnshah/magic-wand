@@ -434,6 +434,11 @@ class CaptureController:
             raise ConflictError(
                 "no_session", "start a session before capturing"
             )
+        if snapshot.session.camera_check:
+            raise ConflictError(
+                "camera_check",
+                "check the camera on the Calibrate page and continue first",
+            )
         if snapshot.active_label is None:
             raise InvalidRequestError("choose a label first")
         if snapshot.capture.state is not CaptureStatus.STOPPED:

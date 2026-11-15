@@ -36,6 +36,7 @@ from wand_collect.settings import DataCollectionSettings
 from wand_collect.state import (
     ApplicationState,
     Owner,
+    SessionRole,
     SettingsState,
     settings_locked,
 )
@@ -219,8 +220,20 @@ class CalibrationService:
             )
         return sorted(cameras, key=lambda c: c["index"])
 
-    def put_camera(self, body: CameraBody) -> None:
+    def _require_camera_changeable(self) -> None:
+        """The camera may change unless a session is capturing, except while
+        the camera of a resumed session is being checked."""
+        session = self._state.snapshot.session
+        if (
+            session is not None
+            and session.role is SessionRole.CAPTURE
+            and session.camera_check
+        ):
+            return
         self._require_unlocked()
+
+    def put_camera(self, body: CameraBody) -> None:
+        self._require_camera_changeable()
         camera = self._app.camera
         try:
             self._engine.open_camera(
