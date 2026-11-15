@@ -18,6 +18,7 @@ from __future__ import annotations
 import bisect
 import logging
 import queue
+import statistics
 import threading
 from collections import deque
 from collections.abc import Callable
@@ -55,7 +56,14 @@ from wand_core.vision import Tracker
 logger = logging.getLogger(__name__)
 
 VIEWS = ("camera", "mask")
-FPS_MEASURE_SECONDS = 2.0
+# The frame rate is measured from the intervals between recent frames: the
+# first second after a camera opens is ignored (cameras often stall while they
+# start), the rate is the inverse of the median interval in a window of the
+# latest frames, and it is published again only when it changes noticeably.
+FPS_WARMUP_S = 1.0
+FPS_WINDOW_FRAMES = 30
+FPS_MIN_FRAMES = 15
+FPS_CHANGE = 0.05
 IDLE_WAIT_S = 0.05
 JPEG_QUALITY = 85
 
@@ -236,8 +244,9 @@ class CaptureEngine:
         self._segmenter: Segmenter | None = None
         self._settings_seen: Any = None
         self._segmenter_state = SegmenterState.IDLE
-        self._fps_stamps: list[float] = []
-        self._fps_done = True
+        self._fps_first: float | None = None
+        self._fps_stamps: deque[float] = deque(maxlen=FPS_WINDOW_FRAMES)
+        self._fps_published: float | None = None
 
     # --- Lifecycle -------------------------------------------------------
 
@@ -377,7 +386,6 @@ class CaptureEngine:
 
     def _no_frame(self) -> None:
         if isinstance(self._source, VideoFileSource):
-            self._finish_fps_measurement()
             self.finished.set()
         else:
             self._stop.wait(0.005)  # a failed grab: try again shortly
@@ -400,8 +408,9 @@ class CaptureEngine:
         self._settings_seen = None
         self._segmenter_state = SegmenterState.IDLE
         self.buffer.clear()
-        self._fps_stamps = []
-        self._fps_done = False
+        self._fps_first = None
+        self._fps_stamps.clear()
+        self._fps_published = None
         width, height = source.frame_size
         actual = getattr(source, "actual", None) or CameraMode(
             width, height, source.nominal_fps
@@ -518,20 +527,24 @@ class CaptureEngine:
     # --- Measured frame rate ---------------------------------------------
 
     def _measure_fps(self, timestamp_s: float) -> None:
-        if self._fps_done:
+        if self._fps_first is None:
+            self._fps_first = timestamp_s
+        if timestamp_s - self._fps_first < FPS_WARMUP_S:
             return
-        self._fps_stamps.append(timestamp_s)
-        if timestamp_s - self._fps_stamps[0] >= FPS_MEASURE_SECONDS:
-            self._finish_fps_measurement()
-
-    def _finish_fps_measurement(self) -> None:
-        if self._fps_done:
-            return
-        self._fps_done = True
         stamps = self._fps_stamps
-        if len(stamps) < 2 or stamps[-1] <= stamps[0]:
+        stamps.append(timestamp_s)
+        if len(stamps) < FPS_MIN_FRAMES:
             return
-        fps = (len(stamps) - 1) / (stamps[-1] - stamps[0])
+        steps = [b - a for a, b in zip(stamps, list(stamps)[1:]) if b > a]
+        if not steps:
+            return
+        fps = 1.0 / statistics.median(steps)
+        published = self._fps_published
+        if published is not None and abs(fps - published) <= (
+            FPS_CHANGE * published
+        ):
+            return
+        self._fps_published = fps
 
         def with_measured_rate(snapshot):
             camera = snapshot.camera
@@ -540,7 +553,11 @@ class CaptureEngine:
             actual = CameraMode(camera.actual.width, camera.actual.height, fps)
             return {
                 "camera": CameraState(
-                    camera.device, camera.index, camera.requested, actual
+                    camera.device,
+                    camera.index,
+                    camera.requested,
+                    actual,
+                    fps_measured=True,
                 )
             }
 

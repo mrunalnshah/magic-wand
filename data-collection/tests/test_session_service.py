@@ -140,6 +140,9 @@ def test_start_records_everything_and_locks_settings(rig):
     assert record.started_at is not None and record.ended_at is None
     assert record.camera.device == "Test Cam"
     assert record.camera.actual.width == 640
+    # The rate is not measured yet, so the one the camera reported is kept.
+    assert not rig.state.snapshot.camera.fps_measured
+    assert record.camera.actual.fps == rig.state.snapshot.camera.actual.fps
     assert record.vision_settings.hue_center == 11
     assert record.clip_padding.pre_s == rig.app_settings.clip_padding.pre_s
     assert record.highest_sample_number == 0

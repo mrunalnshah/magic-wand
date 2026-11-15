@@ -320,14 +320,63 @@ def test_opening_writes_the_camera_to_the_state(rig):
     assert camera.actual == CameraMode(640, 480, FPS)
 
 
-def test_measured_frame_rate_is_written_after_a_couple_of_seconds():
+def test_the_frame_rate_is_not_measured_until_there_are_enough_frames():
+    rig = Rig()
+    for i in range(20):  # inside the warm-up and just after it
+        rig.source.push(render_frame(STYLE, (0.5, 0.5)), i / 25.0)
+    rig.wait_frames(20)
+    camera = rig.state.snapshot.camera
+    assert not camera.fps_measured
+    assert camera.actual.fps == FPS  # what the camera reported
+    rig.close()
+
+
+def test_measured_frame_rate_is_written_once_the_window_is_full():
     rig = Rig()
     # Frames arrive every 1/25 s of timestamp, whatever the camera claimed.
     for i in range(80):
         rig.source.push(render_frame(STYLE, (0.5, 0.5)), i / 25.0)
     rig.wait_frames(80)
-    assert rig.state.snapshot.camera.actual.fps == pytest.approx(25.0)
-    assert rig.state.snapshot.camera.requested.fps == FPS
+    camera = rig.state.snapshot.camera
+    assert camera.fps_measured
+    assert camera.actual.fps == pytest.approx(25.0)
+    assert camera.requested.fps == FPS
+    rig.close()
+
+
+def test_a_stall_at_the_start_does_not_spoil_the_measurement():
+    rig = Rig()
+    image = render_frame(STYLE, (0.5, 0.5))
+    rig.source.push(image, 0.0)  # the first frame, then the camera stalls
+    for i in range(80):
+        rig.source.push(image, 2.5 + i / 30.0)
+    rig.wait_frames(81)
+    assert rig.state.snapshot.camera.actual.fps == pytest.approx(30.0)
+    rig.close()
+
+
+def test_a_slower_steady_rate_is_measured_and_a_change_is_followed():
+    rig = Rig()
+    image = render_frame(STYLE, (0.5, 0.5))
+    for i in range(60):
+        rig.source.push(image, i / 10.0)
+    rig.wait_frames(60)
+    assert rig.state.snapshot.camera.actual.fps == pytest.approx(10.0)
+    start = 60 / 10.0
+    for i in range(60):  # the camera speeds up to 20 fps
+        rig.source.push(image, start + i / 20.0)
+    rig.wait_frames(120)
+    assert rig.state.snapshot.camera.actual.fps == pytest.approx(20.0)
+    rig.close()
+
+
+def test_a_video_file_that_ends_gives_no_rate_and_no_error(tmp_path):
+    file = tmp_path / "clip.avi"
+    write_video(line_path(5, (0.3, 0.5), (0.7, 0.5)), file, STYLE, fps=FPS)
+    rig = Rig()
+    rig.engine.open_source(VideoFileSource(file), "file", None).result(2)
+    assert rig.engine.finished.wait(5)
+    assert not rig.state.snapshot.camera.fps_measured
     rig.close()
 
 

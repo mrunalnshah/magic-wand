@@ -98,6 +98,9 @@ class CameraState:
     index: int | None = None
     requested: CameraMode | None = None
     actual: CameraMode | None = None
+    # False until the engine has measured the frame rate: until then
+    # ``actual.fps`` is what the camera reported when it opened.
+    fps_measured: bool = False
 
 
 @dataclass(frozen=True)

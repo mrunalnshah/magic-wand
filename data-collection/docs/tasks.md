@@ -156,7 +156,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-A11 | Command-line tools | Completed |
 | DC-A12 | Session deletion | Completed |
 | DC-A13 | Session name and notes | Completed |
-| DC-A14 | Frame-rate measurement | Not started |
+| DC-A14 | Frame-rate measurement | Completed |
 | DC-A15 | Camera identity on macOS | Not started |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
@@ -1499,7 +1499,7 @@ Cancel.
 ### DC-A14 Frame-rate measurement
 
 - **Type**: fix
-- **Status**: Not started
+- **Status**: Completed
 - **Depends on**: DC-A3
 - **Requirements**: R6.7
 - **Design**: DC 4.6
@@ -1516,22 +1516,22 @@ measurement up to date while the camera runs.
 
 **Acceptance criteria.**
 
-- [ ] The measurement ignores the frames of a warm-up period after the camera
+- [x] The measurement ignores the frames of a warm-up period after the camera
       opens, and is then taken from a window of the most recent frames.
-- [ ] The rate is the inverse of the median interval between frames in the
+- [x] The rate is the inverse of the median interval between frames in the
       window, so a few long gaps do not change it.
-- [ ] The window keeps moving while the camera runs, and the rate in the
+- [x] The window keeps moving while the camera runs, and the rate in the
       Application State is updated when it changes by more than 5%, not on
       every frame.
-- [ ] No rate is published until the window holds enough frames to be
+- [x] No rate is published until the window holds enough frames to be
       meaningful, and until then the state shows the rate as not yet measured.
-- [ ] A test feeds frame timestamps with a long stall at the start and then a
+- [x] A test feeds frame timestamps with a long stall at the start and then a
       steady 30 fps, and expects about 30 fps. A second test uses a steady
       10 fps and expects about 10. A third test uses a video file, whose
       source ends, and expects no rate or error from the end of the file.
-- [ ] The Setup page shows "measuring" while there is no rate, and the mode
+- [x] The Setup page shows "measuring" while there is no rate, and the mode
       warning is not shown until there is one.
-- [ ] A session records the rate at the moment it starts. If there is none
+- [x] A session records the rate at the moment it starts. If there is none
       yet, it records the rate the camera reported when it opened.
 
 **Implementation notes.** `CaptureEngine._measure_fps` and

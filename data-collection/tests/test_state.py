@@ -255,6 +255,7 @@ def test_json_uses_camel_case_and_keeps_data_keys():
         "height": 720,
         "fps": 30.0,
     }
+    assert data["camera"]["fpsMeasured"] is False
     assert data["settings"]["vision"]["hueCenter"] == 15
     assert data["settings"]["motion"]["startSpeed"] == 0.25
     assert data["settings"]["profile"] is None

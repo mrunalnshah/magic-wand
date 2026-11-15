@@ -9,17 +9,21 @@ import { html } from "./html.js";
 
 const REMEMBERED = "wand.setup";
 
-// Whether the camera delivers a different mode than was asked for.
-export function modesDiffer(requested, actual) {
+// Whether the camera delivers a different mode than was asked for. The frame
+// rate is compared only once it has been measured (`fpsMeasured`): before
+// that it is only what the camera reported.
+export function modesDiffer(requested, actual, fpsMeasured = true) {
   if (!requested || !actual) return false;
   if (requested.width !== actual.width) return true;
   if (requested.height !== actual.height) return true;
+  if (!fpsMeasured) return false;
   const fps = Math.abs(requested.fps - actual.fps);
   return requested.fps > 0 && fps / requested.fps > 0.1;
 }
 
-export function describeMode(mode) {
+export function describeMode(mode, fpsMeasured = true) {
   if (!mode) return "unknown";
+  if (!fpsMeasured) return `${mode.width}x${mode.height}, measuring the rate`;
   const fps = Number(mode.fps).toFixed(mode.fps % 1 ? 1 : 0);
   return `${mode.width}x${mode.height} at ${fps} fps`;
 }
@@ -50,7 +54,7 @@ function CameraPanel({ snapshot, notices }) {
   const locked = isCapturing(snapshot);
   const inUse =
     `In use: ${camera.device}, asked for ${describeMode(camera.requested)}, ` +
-    `delivering ${describeMode(camera.actual)}.`;
+    `delivering ${describeMode(camera.actual, camera.fpsMeasured)}.`;
 
   const refresh = async () => {
     const list = await notices.attempt(() => api.get("/api/cameras"));
@@ -90,10 +94,10 @@ function CameraPanel({ snapshot, notices }) {
           ${inUse}
         </p>`
       : html`<p class="hint">No camera is in use.</p>`}
-    ${modesDiffer(camera.requested, camera.actual) &&
+    ${modesDiffer(camera.requested, camera.actual, camera.fpsMeasured) &&
     html`<p class="locked" role="status">
       The camera delivers a different mode than was asked for. Recordings
-      will use ${describeMode(camera.actual)}.
+      will use ${describeMode(camera.actual, camera.fpsMeasured)}.
     </p>`}
     ${camera.device &&
     html`<img class="live" src="/api/stream" alt="Live camera view" />`}
