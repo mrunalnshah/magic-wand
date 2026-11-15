@@ -59,7 +59,10 @@ class Shortcuts(SettingsModel):
     pause: str = "Escape"
     previous: str = "ArrowLeft"
     next: str = "ArrowRight"
-    reject: str = "r"
+    up: str = "ArrowUp"
+    down: str = "ArrowDown"
+    # One key or a list of keys; the first is shown on the button.
+    reject: str | list[str] = [" ", "r"]
     delete: str = "Backspace"
     toggle_view: str = "p"
 

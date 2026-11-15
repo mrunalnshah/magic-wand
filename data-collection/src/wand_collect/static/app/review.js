@@ -45,6 +45,16 @@ export function nextSelection(items, selectedId, previousIndex) {
   return items[items.length - 1].id;
 }
 
+// How many tiles are in one row of the grid: those that share the first
+// tile's top edge. One when the layout is not known.
+export function columnsOf(list) {
+  const tiles = list ? Array.from(list.children) : [];
+  if (tiles.length === 0) return 1;
+  const top = tiles[0].offsetTop;
+  const count = tiles.filter((tile) => tile.offsetTop === top).length;
+  return Math.max(1, count);
+}
+
 function Button({ shortcuts, action, label, ...rest }) {
   const key = action ? shortcuts.keyFor(action) : "";
   return html`<button ...${rest}>
@@ -52,8 +62,8 @@ function Button({ shortcuts, action, label, ...rest }) {
   </button>`;
 }
 
-function Strip({ items, selected, onSelect }) {
-  return html`<ol class="strip">
+function Strip({ items, selected, onSelect, listRef }) {
+  return html`<ol class="strip" ref=${listRef}>
     ${items.map(
       (item, index) => html`<li key=${item.id}>
         <button
@@ -88,6 +98,7 @@ export function Review({ snapshot, shortcuts, notices }) {
   const [overlay, setOverlay] = useState(false);
   const [busy, setBusy] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
+  const stripRef = useRef(null);
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const selectedRef = useRef(selected);
@@ -149,6 +160,14 @@ export function Review({ snapshot, shortcuts, notices }) {
     [],
   );
 
+  // Keep the selected tile in view when the selection moves.
+  useEffect(() => {
+    const list = stripRef.current;
+    if (!list || !selected) return;
+    const tile = list.querySelector('[aria-current="true"]');
+    if (tile && tile.scrollIntoView) tile.scrollIntoView({ block: "nearest" });
+  }, [selected, items]);
+
   const act = async (action) => {
     setBusy(true);
     try {
@@ -187,9 +206,17 @@ export function Review({ snapshot, shortcuts, notices }) {
 
   useEffect(() => shortcuts.on("previous", () => step(-1)), [shortcuts, step]);
   useEffect(() => shortcuts.on("next", () => step(1)), [shortcuts, step]);
+  useEffect(
+    () => shortcuts.on("up", () => step(-columnsOf(stripRef.current))),
+    [shortcuts, step],
+  );
+  useEffect(
+    () => shortcuts.on("down", () => step(columnsOf(stripRef.current))),
+    [shortcuts, step],
+  );
   useEffect(() => shortcuts.on("reject", toggleReject));
   useEffect(() => shortcuts.on("delete", remove));
-  useEffect(() => shortcuts.on("toggle_view", () => setOverlay((v) => !v)), []);
+  useEffect(() => shortcuts.on("toggleView", () => setOverlay((v) => !v)), []);
   useEffect(() => {
     // Escape resumes capturing; it never closes a review by accident.
     if (capturing) return shortcuts.on("pause", resume);
@@ -251,7 +278,7 @@ export function Review({ snapshot, shortcuts, notices }) {
             >
               Overlay on camera frame
             </button>
-            <kbd>${shortcuts.keyFor("toggle_view")}</kbd>
+            <kbd>${shortcuts.keyFor("toggleView")}</kbd>
             ${hasClip &&
             html`<button onClick=${() => setScrubbing(true)}>
               Scrub video
@@ -336,6 +363,11 @@ export function Review({ snapshot, shortcuts, notices }) {
         </div>
       </div>
     </div>`}
-    <${Strip} items=${items} selected=${selected} onSelect=${setSelected} />
+    <${Strip}
+      items=${items}
+      selected=${selected}
+      onSelect=${setSelected}
+      listRef=${stripRef}
+    />
   </section>`;
 }

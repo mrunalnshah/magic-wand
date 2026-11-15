@@ -1,6 +1,6 @@
 # Data Collection Application - Design
 
-> **Version** 14 | **Updated** 2026-11-05 | **Approved**
+> **Version** 15 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -276,14 +276,17 @@ shows what the Application State says.
   - **Browse**: filterable sample table with thumbnails, a detail view, label,
     status and delete actions, and per-label counts.
 - Keyboard shortcuts are read by a listener on the page. Defaults are below,
-  are configurable in `config/data-collection.yaml`, and each is shown on its
-  on-screen button.
+  are configurable in `config/data-collection.yaml` (an action can have a list
+  of keys), and each is shown on its on-screen button. Space and Enter are left
+  to the browser while a button or link has the focus, and a button that was
+  clicked with the mouse gives the focus back, so the shortcut works after it.
 
 | Key | Action |
 |---|---|
 | Esc | While capturing: pause. In review: resume |
 | Left, Right | In review: previous or next sample |
-| R | In review: reject the selected sample (again to accept it) |
+| Up, Down | In review: the sample one row above or below in the grid |
+| Space, R | In review: reject the selected sample (again to accept it) |
 | Backspace | In review: delete the selected sample |
 | P | Switch path-only and overlay views |
 | 1 to 9 | Capturing: set the active label. In review: relabel the sample |

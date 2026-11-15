@@ -512,8 +512,8 @@ dd.rejected {
 
 .strip {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  overflow-x: auto;
   list-style: none;
   padding: 8px 0;
   margin: 8px 0 0;

@@ -41,3 +41,17 @@ def test_the_preview_is_mirrored_by_default_and_the_option_is_read(tmp_path):
     assert DataCollectionSettings().mirror_preview is True
     (tmp_path / "data-collection.yaml").write_text("mirrorPreview: false\n")
     assert load_app_settings(tmp_path).mirror_preview is False
+
+
+def test_reject_takes_one_key_or_a_list_of_keys(tmp_path):
+    defaults = DataCollectionSettings().shortcuts
+    assert defaults.reject == [" ", "r"]
+    assert defaults.delete == "Backspace"
+    (tmp_path / "data-collection.yaml").write_text(
+        'shortcuts:\n  reject: "/"\n'
+    )
+    assert load_app_settings(tmp_path).shortcuts.reject == "/"
+    (tmp_path / "data-collection.yaml").write_text(
+        'shortcuts:\n  reject: ["/", x]\n'
+    )
+    assert load_app_settings(tmp_path).shortcuts.reject == ["/", "x"]

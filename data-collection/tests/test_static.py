@@ -100,7 +100,9 @@ def test_config_endpoint_gives_the_page_its_shortcuts(client):
         "pause": "Escape",
         "previous": "ArrowLeft",
         "next": "ArrowRight",
-        "reject": "r",
+        "up": "ArrowUp",
+        "down": "ArrowDown",
+        "reject": [" ", "r"],
         "delete": "Backspace",
         "toggleView": "p",
     }

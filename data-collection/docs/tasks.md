@@ -167,7 +167,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U7 | Scrubbing view (P2) | Completed |
 | DC-U8 | No-camera message | Completed |
 | DC-U9 | Delete without an error notice | Completed |
-| DC-U10 | Review grid and Space key | Not started |
+| DC-U10 | Review grid and Space key | Completed |
 | DC-U11 | Notices and page polish | Not started |
 | DC-U12 | Save to the loaded profile | Not started |
 | DC-U13 | Keyboard scrubbing | Not started |
@@ -1930,7 +1930,7 @@ still show a notice.
 ### DC-U10 Review grid and Space key
 
 - **Type**: feat
-- **Status**: Not started
+- **Status**: Completed
 - **Depends on**: DC-U5, DC-U9
 - **Requirements**: R5.1, R5.3
 - **Design**: DC 4.1
@@ -1943,22 +1943,22 @@ easy to reach next to the arrow keys.
 
 **Acceptance criteria.**
 
-- [ ] The tiles wrap onto new rows at the page width, with no horizontal
+- [x] The tiles wrap onto new rows at the page width, with no horizontal
       scroll at any window width, and the page scrolls vertically when there
       are more tiles than fit.
-- [ ] The selected tile is always scrolled into view, also after stepping with
+- [x] The selected tile is always scrolled into view, also after stepping with
       the arrow keys, and is clearly marked. A rejected tile is shown dimmed as
       before.
-- [ ] Left and Right still select the previous and next sample in capture
+- [x] Left and Right still select the previous and next sample in capture
       order, across rows. Up and Down move the selection by one row.
-- [ ] Space rejects the selected sample if it is accepted, and restores it if
+- [x] Space rejects the selected sample if it is accepted, and restores it if
       it is rejected. The letter `r` still does the same.
-- [ ] A shortcut can be bound to more than one key: the `reject` setting takes
+- [x] A shortcut can be bound to more than one key: the `reject` setting takes
       a single key or a list of keys, the default is `[" ", "r"]`, and the
       buttons show the first key.
-- [ ] Space does not scroll the page, and does nothing while a button, a field
+- [x] Space does not scroll the page, and does nothing while a button, a field
       or a dialog has the focus, so it never acts twice.
-- [ ] Tests cover wrapping, the selection by row, Space and `r`, and the focus
+- [x] Tests cover wrapping, the selection by row, Space and `r`, and the focus
       guard.
 
 **Implementation notes.** `static/app/review.js` (the `.strip` element and its
