@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 28 | **Updated** 2026-11-15 | **Approved**
+> **Version** 29 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -427,7 +427,10 @@ machine or container is available; step 4 needs DC-V2.
    `uv run ruff format --check`, `uv run ruff check`, `uv run pytest` and
    `uv run wand-collect --help` all succeed.
 2. Encoding (DC-S1): run `data-collection/spikes/h264_spike.py` on Linux.
-3. Playback (DC-S1): play the produced MP4 in a Linux browser.
+3. Playback (DC-S1): open the MP4 produced on Linux in a browser. The file
+   can be shared out of the container to a browser on another machine (a
+   decision of 2026-11-15: the Linux-specific part is the encoding, and a
+   browser decodes the same H.264 on any system).
 4. Cameras (DC-V2): run the DC-V2 checklist with a real camera on Linux, and
    fill in its Linux column.
 
@@ -437,21 +440,24 @@ machine or container is available; step 4 needs DC-V2.
 - [x] PyAV's wheel on Linux can encode H.264 with `libx264`, and the 150-frame
       clip encodes in well under 6 seconds. If it cannot, the fallbacks
       named in DC-S1 are tried and the outcome is recorded.
-- [ ] The MP4 plays in at least one Linux browser.
+- [x] The MP4 encoded on Linux plays in a browser (Chrome on macOS, with the
+      file shared from the container).
 - [ ] The DC-V2 checklist has been run on Linux and its results recorded.
 - [ ] The findings are written in `docs/notes.md` (a version bump and review),
       and problems found are recorded as follow-up tasks. If the chosen video
       approach does not work on Linux, DC-A7 is changed accordingly.
 
-**Progress (2026-11-15).** Steps 1 and 2 were run in Docker, on a clean checkout
+**Progress (2026-11-15).** Steps 1 to 3 were run in Docker, on a clean checkout
 made with `git archive`, on Debian 13 with Python 3.12 and uv 0.13: on ARM
 (aarch64) and on x86_64 (emulated). On both, `uv sync`, `ruff format --check`,
 `ruff check`, `pytest` (558 passed) and `wand-collect --help` succeed, and the
 spike encodes with PyAV `libx264` in 1.0 s (ARM) and 1.7 s (x86_64), as H.264
 with `faststart`. The findings are in `docs/notes.md` (platforms, and video
-clips). No problems were found, so no follow-up tasks. Still to do: step 3 (play
-the MP4 in a Linux browser) and step 4 (the checklist with a real camera on
-Linux), which need a Linux desktop. The findings criterion is met for what was
+clips). No problems were found, so no follow-up tasks. Step 3 was done by
+sharing the MP4s out of the containers and opening them in Chrome on the Mac:
+both load, are 640x480 and 5 s long, and a decoded frame shows the ball where
+it was drawn. Still to do: step 4 (the checklist with a real camera on Linux),
+which needs a Linux desktop. The findings criterion is met for what was
 run so far.
 
 **Implementation notes.**
