@@ -32,13 +32,17 @@ export function queryFor(filters, page, pageSize = CHUNK, order = "newest") {
   return params.toString();
 }
 
-// Fetches the first `count` samples of a query (a multiple of CHUNK, or all of
-// them), in as few requests as the server's page size allows.
+// Fetches at least the first `count` samples of a query, in as few requests as
+// the server's page size allows. The amount is rounded up to a whole number of
+// chunks, so a page size is always a whole number (a list that has lost a few
+// samples to deletes is not a whole number of chunks long, and a decimal page
+// size is refused by the server).
 async function fetchFirst(filters, order, count) {
-  const size = CHUNK * Math.min(MAX_PAGE / CHUNK, Math.max(1, count / CHUNK));
+  const wanted = Math.ceil(count / CHUNK) * CHUNK;
+  const size = Math.min(MAX_PAGE, wanted);
   const items = [];
   let total = 0;
-  for (let page = 1; items.length < count; page += 1) {
+  for (let page = 1; items.length < wanted; page += 1) {
     const found = await api.get(
       `/api/samples?${queryFor(filters, page, size, order)}`,
     );
@@ -97,10 +101,11 @@ export function useSampleList(filters, order, revision, notices) {
   const loadMore = async () => {
     const have = listRef.current.items.length;
     if (busy.current || have >= listRef.current.total) return;
+    // The chunk that holds the next sample; samples already known are dropped
+    // below, so a list that is not a whole number of chunks long is fine.
+    const page = Math.floor(have / CHUNK) + 1;
     const result = await guarded(() =>
-      api.get(
-        `/api/samples?${queryFor(filters, have / CHUNK + 1, CHUNK, order)}`,
-      ),
+      api.get(`/api/samples?${queryFor(filters, page, CHUNK, order)}`),
     );
     if (!result) return;
     setList((current) => {

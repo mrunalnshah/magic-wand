@@ -2390,6 +2390,15 @@ layout (the strip of thumbnails above or below a panel) is gone. The new Review
 shows the newest sample first (it used to be in capture order, with the latest
 last).
 
+**Fix after testing.** Deleting a second sample failed with "query.pageSize:
+Input should be a valid integer". The list is read again after every change,
+asking for as many samples as are loaded; I had assumed that to be a whole
+number of chunks of 100, but a few deletes make it 116, and 116 / 100 * 100
+is 115.99999999999999 in floating point, which the server refuses. The amount is
+now rounded up to whole chunks with integer arithmetic, and the next page is
+computed the same way. A scratch test deletes five samples in a row from a list
+of 117.
+
 ### DC-U19 Point counts and one page width
 
 - **Type**: feat
