@@ -188,6 +188,13 @@ class Run:
 @pytest.fixture
 def config(tmp_path):
     shutil.copytree(REPO_CONFIG, tmp_path / "config")
+    # The test's own labels, so that it does not depend on the real spell list.
+    (tmp_path / "config" / "labels.yaml").write_text(
+        "labels:\n"
+        "  - {id: spell_one, name: Spell One}\n"
+        "  - {id: spell_two, name: Spell Two}\n"
+        "  - {id: spell_three, name: Spell Three}\n"
+    )
     path = tmp_path / "config" / "data-collection.yaml"
     text = path.read_text()
     text = text.replace("countdownS: 3.0", f"countdownS: {COUNTDOWN_S}")

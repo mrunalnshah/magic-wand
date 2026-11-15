@@ -1,13 +1,19 @@
 # Spell labels. Each label has an `id` (a lowercase slug, stored in samples
 # and used in classifier output; never change it once data exists) and a
-# `name` (the display name shown to users; free to rename).
-#
-# These three are dummy entries for development. Replace them with the real
-# spell list when it is decided.
+# `name` (the display name shown to users; free to rename). The digits 1 to 9
+# choose the first nine labels in this order.
 labels:
-  - id: spell_one
-    name: Theta
-  - id: spell_two
-    name: Mu
-  - id: spell_three
-    name: Omega
+  - id: alohamora
+    name: Alohamora
+  - id: aparecum
+    name: Aparecum
+  - id: herbivicus
+    name: Herbivicus
+  - id: silencio
+    name: Silencio
+  - id: revelio
+    name: Revelio
+  - id: expelliarmus
+    name: Expelliarmus
+  - id: reparo
+    name: Reparo

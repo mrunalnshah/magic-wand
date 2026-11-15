@@ -574,35 +574,6 @@ dd.rejected {
   color: var(--bad);
 }
 
-.strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  list-style: none;
-  padding: 8px 0;
-  margin: 8px 0 0;
-}
-
-.strip .thumb {
-  position: relative;
-  display: grid;
-  gap: 2px;
-  padding: 3px;
-  width: 104px;
-}
-
-.strip .thumb.accepted {
-  border-color: color-mix(in srgb, var(--ok) 60%, var(--border));
-}
-
-.strip .thumb.rejected {
-  border-color: color-mix(in srgb, var(--bad) 65%, var(--border));
-}
-
-.strip .thumb[aria-current="true"] {
-  border-color: var(--accent);
-}
-
 /* The accepted or rejected marker in the corner of a thumbnail. */
 .mark {
   position: absolute;
@@ -630,18 +601,6 @@ dd.rejected {
   color: #fff;
 }
 
-
-.strip .thumb.rejected img {
-  opacity: 0.35;
-}
-
-.strip .thumb img {
-  width: 96px;
-  height: 72px;
-  object-fit: contain;
-  background: #000;
-  border-radius: 4px;
-}
 
 /* Browse page */
 
@@ -1020,4 +979,27 @@ td.rejected {
     max-height: 48vh;
     margin-bottom: 8px;
   }
+}
+
+/* What is specific to a session, above the workspace of the Review page. */
+.review-top {
+  flex: none;
+}
+
+.review-top .row {
+  margin: 0 0 4px;
+  gap: 8px 16px;
+}
+
+.review-top .locked {
+  margin: 4px 0 0;
+}
+
+/* The end of the grid: where the next samples are loaded. */
+.grid-end {
+  min-height: 28px;
+  padding: 6px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
 }

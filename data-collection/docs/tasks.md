@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 22 | **Updated** 2026-11-14 | **Approved**
+> **Version** 23 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -164,6 +164,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U15 | Wording, hover and resume-flow polish | Completed |
 | DC-U16 | Accepted and rejected markers | Completed |
 | DC-U17 | Browse grid layout | Completed |
+| DC-U18 | Infinite scroll and the Review workspace | Completed |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
 | DC-U3 | Calibrate page | Completed |
@@ -195,7 +196,7 @@ Every part of the approved designs is assigned to at least one task.
 | 3.2 Session lifecycle | DC-A9, DC-A1, DC-L9 |
 | 3.3 Calibration | DC-A5, DC-U3, DC-L6, DC-L7 |
 | 3.4 Capture cycle | DC-A10, DC-A3, DC-A7, DC-U4, DC-U5 |
-| 4.1 Web UI | DC-U1 to DC-U17 |
+| 4.1 Web UI | DC-U1 to DC-U18 |
 | 4.2 Application Server | DC-A2, DC-A4 |
 | 4.3 Application State | DC-A1 |
 | 4.4 Calibration Service | DC-A5, DC-A17 |
@@ -364,7 +365,8 @@ place.
 - `hue_center` and `hue_half_width` are in OpenCV hue units (0 to 179) and
   describe an interval on a circle. A suggested default for an orange ball:
   `hue_center` 15, `hue_half_width` 10, `sat_min` 120, `val_min` 120.
-- Dummy label ids are lowercase slugs, for example `spell_one`.
+- Label ids are lowercase slugs (the placeholder ids were `spell_one` and so
+  on; the real spells replaced them in DC-U18's change to `config/labels.yaml`).
 - Keep file reading separate from validation so both can be tested alone.
 
 ### DC-S1 H.264 encoding spike
@@ -2303,7 +2305,8 @@ page can use them next (DC-U18, to be written).
       per-label progress (one row) and the filters (one row, which scrolls
       sideways in a narrow window).
 - [x] The grid shows each sample as a tile: thumbnail, accepted or rejected
-      marker and border (DC-U16), and the label's name. It is in pages of 100.
+      marker and border (DC-U16), and the label's name. (It was in pages of 100;
+      DC-U18 replaced the pages with infinite scrolling.)
 - [x] The selected sample is shown in a panel beside the grid, about 40% of the
       width: the picture (path or overlay), the buttons Path only, Overlay (or
       the disabled "Video unavailable") and Scrub, the details, and, pinned at the
@@ -2332,6 +2335,59 @@ page can use them next (DC-U18, to be written).
 the `.shell.fill`, `.workspace`, `.tiles` and `.detail-pane` rules in
 `style.css`. A page asks for the full-height frame with `fill: true` in `PAGES`
 (`nav.js`).
+
+### DC-U18 Infinite scroll and the Review workspace
+
+- **Type**: feat
+- **Status**: Completed
+- **Depends on**: DC-U17, DC-U5, DC-U15
+- **Requirements**: R5.1, R5.2, R5.3, R5.4, R7.1
+- **Design**: DC 3.4, 4.1
+
+**Description.** Replace the pages of the Browse grid with infinite scrolling,
+and rebuild the Review page on the same workspace, so the two pages share one
+set of code. Also replace the placeholder spells with the real list.
+
+**Acceptance criteria.**
+
+- [x] The sample workspace (`static/app/workspace.js`) loads a chunk of 100
+      samples at first, and the next chunk when the end of the grid comes
+      within about 600 px of the part that can be seen, whether the grid pane
+      scrolls or (in a narrow, short window) the page does. It asks for nothing
+      past the last sample. The text above the grid says how many match, and how
+      many are shown while more remain. There are no paging controls.
+- [x] When the samples revision changes, the part already loaded is read again
+      (in as few requests as the server's page size allows), so the list stays
+      what it is on the server and keeps its place. A change of filter starts
+      the list again.
+- [x] Left, Right, Up and Down go on past the end of what is loaded: the next
+      chunk is loaded and the move continues in it. Keys that repeat faster than
+      the page draws each move from where the last one went.
+- [x] The Review page is the workspace limited to the loaded session, newest
+      first, with the newest sample selected. Above the grid it has: Resume
+      capturing (or Close review, "Check the camera first", "Go to Record", as in
+      DC-U15), Put on hold, and the selector of the label for the next captures;
+      and the notice that the last gesture is still saving. A sample captured
+      while Review is open appears at the top and the selection stays where it
+      was. A session with no samples says so; with no session loaded the page
+      says that.
+- [x] The panel shows the sample's number in its session ("#42").
+- [x] `config/labels.yaml` lists the real spells in this order: Alohamora,
+      Aparecum, Herbivicus, Silencio, Revelio, Expelliarmus, Reparo (ids
+      `alohamora`, `aparecum`, `herbivicus`, `silencio`, `revelio`,
+      `expelliarmus`, `reparo`). The tests that used the placeholder spells use
+      their own labels, so they do not depend on this file.
+- [x] The infinite scroll was checked in Chrome with 450 made-up samples: the
+      grid loaded 100, 200, 300, 400 and then the last 50 as it was scrolled,
+      and the page itself did not scroll.
+- [x] Tests cover the loading, the keys, the refresh, the Review controls and
+      the resume flows.
+
+**Implementation notes.** `SampleWorkspace`, `useSampleList` and `queryFor` in
+`workspace.js`; `Browse` in `browse.js`; `Review` in `review.js`. The old Review
+layout (the strip of thumbnails above or below a panel) is gone. The new Review
+shows the newest sample first (it used to be in capture order, with the latest
+last).
 
 ## 10. Verification tasks
 

@@ -57,11 +57,23 @@ def stub_camera(index, width, height, fps):
 def test_the_repository_labels_load():
     labels = load_labels(REPO_CONFIG / "labels.yaml")
     assert [label.id for label in labels] == [
-        "spell_one",
-        "spell_two",
-        "spell_three",
+        "alohamora",
+        "aparecum",
+        "herbivicus",
+        "silencio",
+        "revelio",
+        "expelliarmus",
+        "reparo",
     ]
-    assert [label.name for label in labels] == ["Theta", "Mu", "Omega"]
+    assert [label.name for label in labels] == [
+        "Alohamora",
+        "Aparecum",
+        "Herbivicus",
+        "Silencio",
+        "Revelio",
+        "Expelliarmus",
+        "Reparo",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -96,7 +108,7 @@ def test_startup_loads_configuration_opens_the_data_folder_and_labels(config):
         assert (config.parent / "data" / "dataset.json").is_file()
         assert isinstance(application.store, DatasetStore)
         snapshot = application.state.snapshot
-        assert [label.id for label in snapshot.labels][0] == "spell_one"
+        assert [label.id for label in snapshot.labels][0] == "alohamora"
         assert snapshot.settings.vision.hue_center == 15
         assert snapshot.capture.state is CaptureStatus.STOPPED
         assert application.settings.server.port == 8000

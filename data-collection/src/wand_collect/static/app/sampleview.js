@@ -30,17 +30,10 @@ export function columnsOf(list) {
   return Math.max(1, count);
 }
 
-// Which sample to show after the list changed: the one that was selected,
-// else the one now at its position, else the latest.
-export function nextSelection(items, selectedId, previousIndex) {
-  if (items.length === 0) return null;
-  if (selectedId && items.some((item) => item.id === selectedId)) {
-    return selectedId;
-  }
-  if (selectedId && previousIndex >= 0) {
-    return items[Math.min(previousIndex, items.length - 1)].id;
-  }
-  return items[items.length - 1].id;
+// The number of a sample in its session: the end of its id.
+export function sampleNumber(id) {
+  const number = Number(String(id).split("-").pop());
+  return Number.isNaN(number) ? id : `#${number}`;
 }
 
 export function thumbnail(id) {
@@ -188,6 +181,8 @@ export function SampleDetail({
       <dl class="facts">
         <dt>Label</dt>
         <dd>${labelName(snapshot, summary.label)}</dd>
+        <dt>Number</dt>
+        <dd>${sampleNumber(id)}</dd>
         <dt>Status</dt>
         <dd class=${summary.status}>${summary.status}</dd>
         <dt>Session</dt>

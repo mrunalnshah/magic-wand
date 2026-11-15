@@ -4,7 +4,7 @@ export const PAGES = [
   { id: "setup", title: "Setup" },
   { id: "calibrate", title: "Calibrate" },
   { id: "record", title: "Record" },
-  { id: "review", title: "Review" },
+  { id: "review", title: "Review", fill: true },
   // `fill` pages use the whole height of the window: the page does not
   // scroll, and the panes inside it do.
   { id: "browse", title: "Browse", fill: true },

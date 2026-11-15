@@ -1,6 +1,6 @@
 # Data Collection Application - Design
 
-> **Version** 19 | **Updated** 2026-11-14 | **Approved**
+> **Version** 20 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -228,9 +228,9 @@ duration plus the countdown.
 
 **Pause and review.** While capturing runs, the Web UI shows the latest result
 but offers no review actions. Pressing Escape or clicking pauses capturing.
-Review opens on the samples of the session with the latest selected, as soon as
-any sample still being saved is saved, so review only ever sees saved samples.
-The user steps through the samples and can reject, restore, delete or relabel
+Review opens on the samples of the session, newest first, with the newest
+selected, as soon as any sample still being saved is saved, so review only ever
+sees saved samples. The user steps through the samples and can reject, restore, delete or relabel
 the selected one; each change is saved immediately. The user can also choose a
 different active label for the next captures, and then resumes.
 
@@ -278,10 +278,11 @@ shows what the Application State says.
     once it is pressed (R2.2).
   - **Record**: live view, countdown and state, active label, the latest
     sample's path image, and counts. It has no review actions.
-  - **Review**: the session's samples, with the selected sample's path image
-    (path only or overlay) and details; step, reject, restore, delete and
-    relabel actions; a selector for the active label; Resume. It opens when
-    capturing is paused or a session is loaded.
+  - **Review**: the same workspace as Browse (a grid of thumbnails that loads
+    more as it is scrolled, and the selected sample beside it), limited to the
+    loaded session and newest first, with above it Resume capturing (or Close
+    review), Put on hold, and the selector of the label for the next captures.
+    It opens when capturing is paused or a session is loaded.
   - **Browse**: a grid of thumbnails in a pane of its own, with filters and
     per-label counts above it, and the selected sample beside it (above it in
     a narrow window): the picture, the buttons that change what it shows, the
@@ -721,8 +722,10 @@ counts.
   the index, then writes the new Counts and an increased Samples revision to
   the Application State.
 - Queries filter the index by label, session, author, date and status, and
-  return a page. Review is the query for one session in capture order; the Web
-  UI keeps track of which sample is selected.
+  return a page. Review is the query for one session, newest first; the Web
+  UI loads it a chunk of 100 at a time as the grid is scrolled, reads the part
+  already loaded again when the samples revision changes, and keeps track of
+  which sample is selected.
 - Edits (label, status) and deletions are applied through the Dataset Store:
   the session's samples file is rewritten atomically, and for a deletion the
   clip is removed. Edits are allowed in any session, open or ended.

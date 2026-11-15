@@ -120,12 +120,14 @@ column is filled in by task DC-S2.
 ### Pause and review
 
 - **5.1** Press Escape while Go is shown.
-  Expect: Capture pauses and Review opens with the latest sample selected.
+  Expect: Capture pauses and Review opens with the newest sample (the first
+  tile) selected.
 
-- **5.2** Step through the samples with the arrow keys and switch to the
-  overlay.
+- **5.2** Step through the samples with the arrow keys (Left and Right by
+  tile, Up and Down by row) and switch to the overlay.
   Expect: Each sample shows its path. The overlay shows the camera frame at the
-  start of the gesture.
+  start of the gesture. With many samples, scroll the grid down: more load as
+  you near the end, and the selected sample stays where it is.
 
 - **5.3** Reject a sample, restore it and reject it again. Relabel another with
   a digit key. Delete a third after confirming.
