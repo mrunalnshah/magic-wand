@@ -3,6 +3,7 @@ import queue
 import pytest
 from fastapi.testclient import TestClient
 
+from wand_collect.cameras import CameraCatalog
 from wand_collect.engine import CaptureEngine
 from wand_collect.server import create_app
 from wand_collect.services.calibration import CalibrationService
@@ -447,6 +448,56 @@ def test_editing_the_name_keeps_the_camera_check(rig):
     rig.client.post(f"/api/sessions/{session_id}/load?mode=resume")
     rig.client.patch(f"/api/sessions/{session_id}", json={"name": "New"})
     assert rig.state.snapshot.session.camera_check
+
+
+def _count_scans(rig):
+    scans = []
+
+    def lister():
+        scans.append(1)
+        return list(rig.cameras)
+
+    rig.service._cameras = CameraCatalog(lister)
+    return scans
+
+
+def test_resume_uses_the_camera_list_already_read(rig):
+    scans = _count_scans(rig)
+    session_id = start_and_close(rig)
+    rig.engine.close_camera().result(2)
+    assert (
+        rig.client.post(
+            f"/api/sessions/{session_id}/load?mode=resume"
+        ).status_code
+        == 200
+    )
+    assert len(scans) == 1
+    rig.client.post("/api/sessions/current/hold")
+    rig.engine.close_camera().result(2)
+    assert (
+        rig.client.post(
+            f"/api/sessions/{session_id}/load?mode=resume"
+        ).status_code
+        == 200
+    )
+    assert len(scans) == 1  # the second resume read nothing again
+
+
+def test_resume_looks_again_when_the_recorded_camera_is_not_in_the_list(rig):
+    scans = _count_scans(rig)
+    session_id = start_and_close(rig)  # recorded with "Test Cam"
+    rig.engine.close_camera().result(2)
+    rig.cameras = [CameraInfo(0, "Other Cam", "Other Cam")]
+    rig.service._cameras.get()  # a list without the recorded camera is kept
+    assert len(scans) == 1
+    rig.cameras = [
+        CameraInfo(0, "Other Cam", "Other Cam"),
+        CameraInfo(2, "Test Cam", "Test Cam"),  # plugged in since
+    ]
+    response = rig.client.post(f"/api/sessions/{session_id}/load?mode=resume")
+    assert response.status_code == 200
+    assert len(scans) == 2
+    assert rig.opened[-1][0] == 2  # and the recorded camera was found
 
 
 def test_resume_opens_the_recorded_camera(rig):

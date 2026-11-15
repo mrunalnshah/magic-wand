@@ -13,6 +13,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from wand_collect.app import Application
+from wand_collect.cameras import CameraCatalog
 from wand_collect.clip_writer import ClipWriter
 from wand_collect.controller import CaptureController
 from wand_collect.server import STATIC_DIR, create_app
@@ -51,12 +52,13 @@ def assemble(
 ) -> Assembled:
     """Create every service and the web application, and start the loops."""
     state, engine = application.state, application.engine
+    cameras = CameraCatalog(camera_lister)  # one scan, shared
     calibration = CalibrationService(
         state,
         engine,
         application.config_dir,
         application.settings,
-        camera_lister=camera_lister,
+        camera_lister=cameras,
     )
     sessions = SessionService(
         state,
@@ -64,7 +66,7 @@ def assemble(
         application.store,
         calibration,
         application.settings,
-        camera_lister=camera_lister,
+        camera_lister=cameras,
     )
     library = SampleLibrary(
         state,

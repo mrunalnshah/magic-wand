@@ -60,7 +60,14 @@ class QueueSource(FrameSource):
 
 
 class Rig:
-    def __init__(self, tmp_path, mirror=False, camera_factory=None, cameras=()):
+    def __init__(
+        self,
+        tmp_path,
+        mirror=False,
+        camera_factory=None,
+        cameras=(),
+        camera_lister=None,
+    ):
         self.state = ApplicationState()
         self.engine = CaptureEngine(self.state, camera_factory=camera_factory)
         self.config_dir = tmp_path / "config"
@@ -71,7 +78,7 @@ class Rig:
             self.engine,
             self.config_dir,
             self.app_settings,
-            camera_lister=lambda: list(cameras),
+            camera_lister=camera_lister or (lambda: list(cameras)),
             still_s=0.6,
             wave_s=1.2,
             settle_s=0.3,
@@ -151,6 +158,44 @@ def test_cameras_are_listed_with_names_and_modes(tmp_path):
             "modes": [{"width": 1280, "height": 720, "fps": 30.0}],
         },
     ]
+
+
+def test_the_camera_list_is_read_once_until_a_refresh_is_asked_for(tmp_path):
+    calls = []
+    found = [CameraInfo(0, "A", "A")]
+
+    def lister():
+        calls.append(1)
+        return list(found)
+
+    rig = Rig(tmp_path, camera_lister=lister)
+    first = rig.client.get("/api/cameras").json()
+    found.append(CameraInfo(1, "B", "B"))  # plugged in afterwards
+    again = rig.client.get("/api/cameras").json()
+    assert [c["index"] for c in first] == [0]
+    assert again == first
+    assert len(calls) == 1
+    fresh = rig.client.get("/api/cameras?refresh=true").json()
+    assert [c["index"] for c in fresh] == [0, 1]
+    assert len(calls) == 2
+    assert rig.client.get("/api/cameras").json() == fresh
+    assert len(calls) == 2
+    rig.close()
+
+
+def test_choosing_a_camera_does_not_scan_again(tmp_path):
+    calls = []
+
+    def lister():
+        calls.append(1)
+        return [CameraInfo(0, "A", "A")]
+
+    rig = Rig(tmp_path, camera_lister=lister, camera_factory=None)
+    rig.client.get("/api/cameras")
+    rig.open_camera()  # the state's camera changes
+    rig.client.get("/api/cameras")
+    assert len(calls) == 1
+    rig.close()
 
 
 def test_the_camera_in_use_is_listed_even_if_it_cannot_be_probed(tmp_path):

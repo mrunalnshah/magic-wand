@@ -52,6 +52,13 @@ column is filled in by task DC-S2.
   Expect: The live view switches. The mode line shows the mode asked for and the
   mode delivered.
 
+- **1.2b** Reload the Setup page, and switch between cameras a few times.
+  Expect: No camera switches on by itself, apart from the one you choose (the
+  phone's camera stays off). The list does not change. Then plug in or remove a
+  camera and press Refresh list.
+  Expect: Only then are the cameras scanned (the cameras flicker once) and the
+  list updates.
+
 - **1.3** Move a hand in front of the camera.
   Expect: The live view keeps up, with no visible lag or stutter (N3).
 
@@ -188,6 +195,7 @@ column is filled in by task DC-S2.
 | 0.3 | pass |  |
 | 1.1 | pass |  |
 | 1.2 | pass |  |
+| 1.2b | |  |
 | 1.3 | pass |  |
 | 1.4 | pass |  |
 | 2.1 | pass |  |

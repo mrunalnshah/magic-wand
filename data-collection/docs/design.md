@@ -1,6 +1,6 @@
 # Data Collection Application - Design
 
-> **Version** 17 | **Updated** 2026-11-14 | **Approved**
+> **Version** 18 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -476,7 +476,12 @@ and loads profiles.
   Capture Engine and the Web UI see it at once.
 - **Cameras**: it asks the Capture Engine's frame source to list the cameras
   and to open one for a preview. Names may be unavailable (notably on macOS),
-  so previews identify a camera.
+  so previews identify a camera. Finding the cameras opens every camera number
+  in turn, which is slow, switches cameras on and can disturb a running one,
+  so a camera catalog shared with the Session Service reads the list the first
+  time it is needed and keeps it. It is read again only when the user presses
+  Refresh list or Retry (`GET /api/cameras?refresh=true`), or when a resume
+  cannot find the recorded camera in the list kept.
 - **Color calibration**: on request it freezes the current frame and keeps it
   in memory. For each batch of clicked points it calls the shared color
   calibrator with the frozen frame and the points, receives vision settings,
@@ -786,7 +791,7 @@ the Web UI shows about the current state comes from `state`.
 | `GET /api/stream` | Live video; `view=camera` or `view=mask` |
 | `GET /api/events` | The event stream (`state` and `motion`) |
 | `GET /api/state` | The current Application State snapshot |
-| `GET /api/cameras` | List cameras |
+| `GET /api/cameras` | List cameras, as found the first time; `?refresh=true` looks again |
 | `PUT /api/camera` | Choose the camera |
 | `POST /api/calibration/freeze` | Freeze a frame |
 | `POST /api/calibration/clicks` | Add clicked points; returns the mask |

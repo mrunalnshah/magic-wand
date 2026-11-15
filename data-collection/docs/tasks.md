@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 19 | **Updated** 2026-11-14 | **Approved**
+> **Version** 20 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -160,6 +160,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-A14 | Frame-rate measurement | Completed |
 | DC-A15 | Camera check on resume | Completed |
 | DC-A16 | Put a session on hold | Completed |
+| DC-A17 | Camera list cache | Completed |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
 | DC-U3 | Calibrate page | Completed |
@@ -194,7 +195,7 @@ Every part of the approved designs is assigned to at least one task.
 | 4.1 Web UI | DC-U1 to DC-U14 |
 | 4.2 Application Server | DC-A2, DC-A4 |
 | 4.3 Application State | DC-A1 |
-| 4.4 Calibration Service | DC-A5 |
+| 4.4 Calibration Service | DC-A5, DC-A17 |
 | 4.5 Session Service | DC-A9, DC-A13, DC-A15, DC-A16 |
 | 4.6 Capture Engine | DC-A3, DC-A14 |
 | 4.7 Capture Controller | DC-A10 |
@@ -1634,6 +1635,42 @@ ending a session without writing `endedAt`.
 **Implementation notes.** `SessionService.hold` and `end` share `_leave`;
 `HoldButton` in `static/app/hold.js`. A review-only session keeps its "Close
 review" button.
+
+### DC-A17 Camera list cache
+
+- **Type**: feat
+- **Status**: Completed
+- **Depends on**: DC-A5, DC-A9, DC-U2
+- **Requirements**: R1.1
+- **Design**: DC 4.4
+
+**Description.** Finding the cameras opens every camera number from 0 to 9, one
+after another: it is slow, it switches each camera on (a phone's included),
+and it can disturb a camera that is running. It was done every time the Setup
+page loaded and every time the camera changed, and on every resume. Read the
+list once and keep it, and read it again only when the user asks.
+
+**Acceptance criteria.**
+
+- [x] A catalog (`wand_collect/cameras.py`) reads the cameras the first time
+      they are asked for and keeps them; the Calibration Service and the
+      Session Service share one, and a plain lister given to a service (as in
+      the tests) is wrapped in its own.
+- [x] `GET /api/cameras` answers from the kept list;
+      `GET /api/cameras?refresh=true` looks again and keeps the new list. The
+      camera in use is still added to the answer when it was not found.
+- [x] The Setup page loads the list without a refresh when it opens and when
+      the camera changes, and with `refresh=true` only for the Refresh list
+      and Retry buttons.
+- [x] Resume uses the kept list. It looks again once, before falling back, when
+      the recorded camera is not in it (it may have been plugged in since).
+- [x] Tests cover the catalog, the endpoint with and without `refresh`, that a
+      camera change causes no new scan, and the resume cases.
+
+**Implementation notes.** `CameraCatalog` and `as_catalog`;
+`CalibrationService.get_cameras(refresh)`; `SessionService._find_camera`;
+`CameraPanel` in `static/app/setup.js`. The list is kept in memory only, so a
+restart of the application scans again.
 
 ## 9. Web UI tasks
 

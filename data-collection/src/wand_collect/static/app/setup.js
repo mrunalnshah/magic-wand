@@ -87,12 +87,18 @@ export function CameraPanel({ snapshot, notices, preview = true }) {
     `In use: ${camera.device}, asked for ${describeMode(camera.requested)}, ` +
     `delivering ${describeMode(camera.actual, camera.fpsMeasured)}.`;
 
-  const refresh = async () => {
-    const list = await notices.attempt(() => api.get("/api/cameras"));
+  // The server keeps the list it found the first time, so loading it again
+  // (when the page opens or the camera changes) costs nothing. Looking for
+  // the cameras again, which switches each of them on, is only done when the
+  // user asks (Refresh list, Retry).
+  const load = async (rescan) => {
+    const query = rescan ? "?refresh=true" : "";
+    const list = await notices.attempt(() => api.get("/api/cameras" + query));
     if (list) setCameras(list);
   };
+  const refresh = () => load(true);
   useEffect(() => {
-    refresh();
+    load(false);
   }, [camera.index]);
 
   const choose = (index) =>

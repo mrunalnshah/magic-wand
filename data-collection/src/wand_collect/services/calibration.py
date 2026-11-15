@@ -26,6 +26,7 @@ import numpy as np
 from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
+from wand_collect.cameras import CameraCatalog, as_catalog
 from wand_collect.engine import CaptureEngine
 from wand_collect.server import (
     ConflictError,
@@ -99,7 +100,9 @@ class CalibrationService:
         engine: CaptureEngine,
         config_dir: Path,
         app_settings: DataCollectionSettings | None = None,
-        camera_lister: Callable[[], list[CameraInfo]] = list_cameras,
+        camera_lister: Callable[[], list[CameraInfo]] | CameraCatalog = (
+            list_cameras
+        ),
         still_s: float = STILL_SECONDS,
         wave_s: float = WAVE_SECONDS,
         settle_s: float = SETTLE_SECONDS,
@@ -108,7 +111,7 @@ class CalibrationService:
         self._engine = engine
         self._config_dir = Path(config_dir)
         self._app = app_settings or DataCollectionSettings()
-        self._list_cameras = camera_lister
+        self._cameras = as_catalog(camera_lister)
         self._still_s = still_s
         self._wave_s = wave_s
         self._settle_s = settle_s
@@ -190,8 +193,10 @@ class CalibrationService:
 
     # --- Cameras ---------------------------------------------------------
 
-    def get_cameras(self) -> list[dict[str, Any]]:
-        found = list(self._list_cameras())
+    def get_cameras(self, refresh: bool = False) -> list[dict[str, Any]]:
+        """The cameras, as found the first time; ``?refresh=true`` looks
+        again (the Refresh list button)."""
+        found = self._cameras.get(refresh=refresh)
         cameras = [
             {
                 "index": c.index,

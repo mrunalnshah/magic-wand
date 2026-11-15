@@ -15,6 +15,7 @@ from typing import Any, Literal, Protocol
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from wand_collect.cameras import CameraCatalog, as_catalog
 from wand_collect.engine import CaptureEngine
 from wand_collect.server import (
     ConflictError,
@@ -72,14 +73,16 @@ class SessionService:
         store: DatasetStore,
         calibration: CalibrationService,
         app_settings: DataCollectionSettings | None = None,
-        camera_lister: Callable[[], list[CameraInfo]] = list_cameras,
+        camera_lister: Callable[[], list[CameraInfo]] | CameraCatalog = (
+            list_cameras
+        ),
     ) -> None:
         self._state = state
         self._engine = engine
         self._store = store
         self._calibration = calibration
         self._app = app_settings or DataCollectionSettings()
-        self._list_cameras = camera_lister
+        self._cameras = as_catalog(camera_lister)
         self._controller: CaptureControllerPort | None = None
         self._lock = threading.Lock()  # one start, load or end at a time
 
@@ -267,7 +270,12 @@ class SessionService:
             and current.index is not None
         ):
             return current.index  # in use, so it may not probe again
-        listed = list(self._list_cameras())
+        listed = self._cameras.get()
+        if device is not None and not any(
+            c.device_id == device for c in listed
+        ):
+            # Not in the list read earlier: it may have been plugged in since.
+            listed = self._cameras.get(refresh=True)
         for camera in listed:
             if device is not None and camera.device_id == device:
                 return camera.index
