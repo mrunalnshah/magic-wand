@@ -803,15 +803,37 @@ td.rejected {
   padding: 3px 6px;
 }
 
-/* The progress of each label side by side, to leave room for the grid. */
+/* The progress of each label as a small cell (name and count above, the bar
+   below), as many to a row as fit, so that six labels or more still read. */
 .browse-top .progress {
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 8px 24px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px 20px;
 }
 
 .browse-top .progress li {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "name number"
+    "bar bar";
+  gap: 2px 8px;
+}
+
+.browse-top .progress .name {
+  grid-area: name;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browse-top .progress .bar {
+  grid-area: bar;
+  height: 6px;
+}
+
+.browse-top .progress .number {
+  grid-area: number;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .workspace {

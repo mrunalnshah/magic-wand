@@ -2321,7 +2321,9 @@ page can use them next (DC-U18, to be written).
       the Review page. Deleting a sample leaves no notice and selects the next
       one.
 - [x] The layout was checked in Chrome at 1400x800, 1000x700, 700x800 and
-      700x500, with the real page and made-up data.
+      700x500, with the real page and made-up data, and with six labels: the
+      per-label progress is a row of small cells (name and count above, the bar
+      below) that wraps as needed.
 - [x] Tests cover the grid, selection, the keys, paging, filters, delete and
       scrub.
 
