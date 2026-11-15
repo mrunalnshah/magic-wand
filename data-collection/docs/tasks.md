@@ -165,7 +165,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U5 | Review page | Completed |
 | DC-U6 | Browse page | Completed |
 | DC-U7 | Scrubbing view (P2) | Completed |
-| DC-U8 | No-camera message | Not started |
+| DC-U8 | No-camera message | Completed |
 | DC-U9 | Delete without an error notice | Not started |
 | DC-U10 | Review grid and Space key | Not started |
 | DC-U11 | Notices and page polish | Not started |
@@ -1851,7 +1851,7 @@ canvas on top. Frame positions come from the sample's `positions` and
 ### DC-U8 No-camera message
 
 - **Type**: fix
-- **Status**: Not started
+- **Status**: Completed
 - **Depends on**: DC-U2
 - **Requirements**: R1.1
 - **Design**: DC 4.1
@@ -1865,18 +1865,18 @@ user does not have to read the terminal output to find out.
 
 **Acceptance criteria.**
 
-- [ ] When the camera list is empty, the Setup page shows a message that names
+- [x] When the camera list is empty, the Setup page shows a message that names
       the likely causes: the camera is unplugged, another application is using
       it, and camera access is denied to the application that runs this one.
-- [ ] On macOS the message gives the place to fix the permission (System
+- [x] On macOS the message gives the place to fix the permission (System
       Settings, Privacy and Security, Camera) and says that the terminal app
       may have to be restarted afterwards. On other systems the permission
       sentence is left out.
-- [ ] The message offers a Retry button that fetches the camera list again, so
+- [x] The message offers a Retry button that fetches the camera list again, so
       the user does not have to reload the page after fixing the problem.
-- [ ] The message is not shown while the list is still loading, and it is
+- [x] The message is not shown while the list is still loading, and it is
       replaced by the camera list as soon as a camera is found.
-- [ ] A test covers the empty list, the list with cameras and the Retry.
+- [x] A test covers the empty list, the list with cameras and the Retry.
 
 **Implementation notes.** `static/app/setup.js` (the hint at the empty list).
 Detecting a denied permission for certain needs a macOS framework call

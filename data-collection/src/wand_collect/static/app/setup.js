@@ -48,7 +48,31 @@ export function isCapturing(snapshot) {
   return Boolean(snapshot.session) && snapshot.session.role === "capture";
 }
 
-function CameraPanel({ snapshot, notices }) {
+// Whether this browser runs on a Mac, where camera access is a setting.
+export function isMac(platform = navigator.platform || "") {
+  return /^Mac/i.test(platform);
+}
+
+// Shown when no camera was found: the likely causes, and a way to look again.
+export function NoCameras({ mac, onRetry }) {
+  return html`<div class="hint" role="status">
+    <p>No cameras were found. Check that:</p>
+    <ul>
+      <li>the camera is plugged in and switched on;</li>
+      <li>no other application is using it;</li>
+      ${mac
+        ? html`<li>
+            camera access is allowed for the application that runs this one
+            (System Settings, Privacy and Security, Camera). After changing
+            it, restart that application.
+          </li>`
+        : null}
+    </ul>
+    <button onClick=${onRetry}>Retry</button>
+  </div>`;
+}
+
+export function CameraPanel({ snapshot, notices }) {
   const [cameras, setCameras] = useState(null);
   const camera = snapshot.camera;
   const locked = isCapturing(snapshot);
@@ -88,7 +112,7 @@ function CameraPanel({ snapshot, notices }) {
       <button disabled=${locked} onClick=${refresh}>Refresh list</button>
     </div>
     ${cameras && cameras.length === 0 &&
-    html`<p class="hint">No cameras were found.</p>`}
+    html`<${NoCameras} mac=${isMac()} onRetry=${refresh} />`}
     ${camera.device
       ? html`<p class="mode">
           ${inUse}
