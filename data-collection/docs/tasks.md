@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 23 | **Updated** 2026-11-14 | **Approved**
+> **Version** 24 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -1629,10 +1629,10 @@ ending a session without writing `endedAt`.
       as open and can be resumed (with the camera check, DC-A15).
 - [x] The working settings keep the values of the held session; nothing is
       reset.
-- [x] The UI offers "Put on hold (resume later)" next to "End session (final)"
-      on the Setup page (current session), the Calibrate page (locked, and the
-      camera check), and by itself on the Record page and, while capturing, the
-      Review page. A held session leaves the user on Setup. Pressing the button
+- [x] The UI offers "Pause" (renamed from "Put on hold (resume later)") next
+      to "End session (final)" on the Setup page (current session), the
+      Calibrate page (locked, and the camera check), and by itself on the
+      Record page and, while capturing, the Review page. A held session leaves the user on Setup. Pressing the button
       on the Record page does not also pause (the page's click-to-pause ignores
       buttons).
 - [x] Tests cover each of these.
@@ -2366,7 +2366,7 @@ set of code. Also replace the placeholder spells with the real list.
 - [x] The Review page is the workspace limited to the loaded session, newest
       first, with the newest sample selected. Above the grid it has: Resume
       capturing (or Close review, "Check the camera first", "Go to Record", as in
-      DC-U15), Put on hold, and the selector of the label for the next captures;
+      DC-U15), Pause, and the selector of the label for the next captures;
       and the notice that the last gesture is still saving. A sample captured
       while Review is open appears at the top and the selection stays where it
       was. A session with no samples says so; with no session loaded the page

@@ -1,6 +1,6 @@
 # Data Collection Application - Design
 
-> **Version** 20 | **Updated** 2026-11-14 | **Approved**
+> **Version** 21 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -148,11 +148,12 @@ built from eleven components:
   camera in use, and capture can start. Capture cannot start before that.
 - **End** is requested by the user. It records the end time and stops
   capturing.
-- **Hold** is requested by the user. It stops capturing and unloads the
-  session without recording an end time, so the session stays open on disk,
-  as when the application is closed. The working settings keep the values of
-  the held session and unlock. Another session can then be started or loaded,
-  and the held one resumed later (with the camera check).
+- **Hold** (the **Pause** button) is requested by the user. It stops
+  capturing and unloads the session without recording an end time, so the
+  session stays open on disk, as when the application is closed. The
+  working settings keep the values of the held session and unlock. Another
+  session can then be started or loaded, and the held one resumed later (with
+  the camera check).
 
 ### 3.3 Calibration
 
@@ -230,9 +231,10 @@ duration plus the countdown.
 but offers no review actions. Pressing Escape or clicking pauses capturing.
 Review opens on the samples of the session, newest first, with the newest
 selected, as soon as any sample still being saved is saved, so review only ever
-sees saved samples. The user steps through the samples and can reject, restore, delete or relabel
-the selected one; each change is saved immediately. The user can also choose a
-different active label for the next captures, and then resumes.
+sees saved samples. The user steps through the samples and can reject,
+restore, delete or relabel the selected one; each change is saved immediately.
+The user can also choose a different active label for the next captures, and
+then resumes.
 
 ## 4. Component Details
 
@@ -281,7 +283,7 @@ shows what the Application State says.
   - **Review**: the same workspace as Browse (a grid of thumbnails that loads
     more as it is scrolled, and the selected sample beside it), limited to the
     loaded session and newest first, with above it Resume capturing (or Close
-    review), Put on hold, and the selector of the label for the next captures.
+    review), Pause, and the selector of the label for the next captures.
     It opens when capturing is paused or a session is loaded.
   - **Browse**: a grid of thumbnails in a pane of its own, with filters and
     per-label counts above it, and the selected sample beside it (above it in

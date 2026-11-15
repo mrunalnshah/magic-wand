@@ -1,9 +1,9 @@
 // The Review page: the samples of the loaded session in the sample workspace
 // (the same grid and selected-sample panel as Browse, limited to the session),
-// with what is specific to a session above it: resume capturing, put the
-// session on hold, and choose the label of the next captures. The newest
-// sample is first and selected, so a gesture that has just been captured is
-// the one to look at.
+// with what is specific to a session above it: resume capturing, pause the
+// session, and choose the label of the next captures. The newest sample is
+// first and selected, so a gesture that has just been captured is the one to
+// look at.
 
 import { useEffect } from "preact/hooks";
 

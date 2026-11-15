@@ -33,8 +33,8 @@ function StartSession({ snapshot, store, notices, goTo }) {
   if (locked) {
     const name = snapshot.session.name;
     const text =
-      `${name} is capturing, so settings are locked. Put it on hold ` +
-      "or end it to calibrate.";
+      `${name} is capturing, so settings are locked. Pause it or end it ` +
+      "to calibrate.";
     return html`<section class="panel start">
       <h3>Session</h3>
       <p>${text}</p>

@@ -168,8 +168,8 @@ function CurrentSession({ snapshot, notices }) {
     </p>
     ${capturing &&
     html`<p class="locked" role="status">
-      Put the session on hold or end it before starting or resuming another
-      one. A session on hold stays open and can be resumed later.
+      Pause the session or end it before starting or resuming another one.
+      A paused session stays open and can be resumed later.
     </p>`}
     <div class="row">
       ${capturing && html`<${HoldButton} notices=${notices} />`}

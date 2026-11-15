@@ -1,6 +1,6 @@
 # Data Collection Application - Manual Tests
 
-> **Version** 1 | **Updated** 2026-11-04 | **Draft**
+> **Version** 2 | **Updated** 2026-11-15 | **Draft**
 
 ## Overview
 
@@ -171,8 +171,8 @@ column is filled in by task DC-S2.
   Expect: Capture works with that camera, and the session's `camera` in
   `session.json` is the new one.
 
-- **6.7** Start a session and record a sample. Press Put on hold. Start a new
-  session, record a sample, and put it on hold too. Resume the first one.
+- **6.7** Start a session and record a sample. Press Pause. Start a new
+  session, record a sample, and pause it too. Resume the first one.
   Expect: Both sessions are listed as open. The first resumes with the camera
   check, its next sample number follows its last, and the second is
   unchanged.
