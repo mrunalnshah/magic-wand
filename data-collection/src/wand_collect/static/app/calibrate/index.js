@@ -4,6 +4,7 @@
 // loaded for capture.
 
 import { api } from "../api.js";
+import { HoldButton } from "../hold.js";
 import { html } from "../html.js";
 import { CameraPanel } from "../setup.js";
 import { useSelector } from "../state.js";
@@ -31,11 +32,16 @@ function StartSession({ snapshot, store, notices, goTo }) {
     notices.attempt(() => api.post("/api/sessions/current/end"));
   if (locked) {
     const name = snapshot.session.name;
-    const text = `${name} is capturing, so settings are locked.`;
+    const text =
+      `${name} is capturing, so settings are locked. Put it on hold ` +
+      "or end it to calibrate.";
     return html`<section class="panel start">
       <h3>Session</h3>
       <p>${text}</p>
-      <button onClick=${end}>End session to calibrate</button>
+      <div class="row">
+        <${HoldButton} notices=${notices} />
+        <button onClick=${end}>End session (final)</button>
+      </div>
     </section>`;
   }
   return html`<section class="panel start">
@@ -94,7 +100,8 @@ function CameraCheck({ snapshot, notices, goTo }) {
         <button disabled=${!snapshot.camera.device} onClick=${confirm}>
           Continue to Record
         </button>
-        <button onClick=${end}>End session</button>
+        <${HoldButton} notices=${notices} />
+        <button onClick=${end}>End session (final)</button>
       </div>
     </section>
     <${CameraPanel}

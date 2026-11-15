@@ -92,6 +92,12 @@ class SessionService:
             "/sessions/current/end", self.end, methods=["POST"], status_code=204
         )
         add(
+            "/sessions/current/hold",
+            self.hold,
+            methods=["POST"],
+            status_code=204,
+        )
+        add(
             "/sessions/current/camera/confirm",
             self.confirm_camera,
             methods=["POST"],
@@ -314,6 +320,17 @@ class SessionService:
     # --- End -------------------------------------------------------------
 
     def end(self) -> None:
+        """End the loaded session for good: it accepts no more samples."""
+        self._leave(finish=True)
+
+    def hold(self) -> None:
+        """Put the loaded session on hold: capturing stops and the session
+        is unloaded, but it stays open on disk, as when the application is
+        closed. It can be resumed later, and another session can be started
+        or loaded meanwhile."""
+        self._leave(finish=False)
+
+    def _leave(self, finish: bool) -> None:
         with self._lock:
             session = self._state.snapshot.session
             if session is None:
@@ -322,7 +339,8 @@ class SessionService:
                 # Stop first, so that no sample is saved after the end.
                 if self._controller is not None:
                     self._controller.stop()
-                self._store.end_session(session.id)
+                if finish:
+                    self._store.end_session(session.id)
             self._state.update(Owner.SESSION_SERVICE, session=None)
 
     # --- Delete ----------------------------------------------------------

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { api } from "./api.js";
 import { useCountdown } from "./countdown.js";
+import { HoldButton } from "./hold.js";
 import { html } from "./html.js";
 import {
   LabelSelect,
@@ -162,6 +163,14 @@ export function Record({ snapshot, shortcuts, notices }) {
         <div class="panel">
           <h3>Latest gesture</h3>
           <${Latest} snapshot=${snapshot} />
+        </div>
+        <div class="panel">
+          <h3>Session</h3>
+          <p class="hint">
+            Put the session on hold to start or resume another one. It stays
+            open.
+          </p>
+          <${HoldButton} notices=${notices} />
         </div>
       </div>
     </div>

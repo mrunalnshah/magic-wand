@@ -5,6 +5,7 @@
 import { useEffect, useState } from "preact/hooks";
 
 import { api } from "./api.js";
+import { HoldButton } from "./hold.js";
 import { html } from "./html.js";
 
 const REMEMBERED = "wand.setup";
@@ -149,11 +150,15 @@ function CurrentSession({ snapshot, notices }) {
     </p>
     ${capturing &&
     html`<p class="locked" role="status">
-      End the session before starting or resuming another one.
+      Put the session on hold or end it before starting or resuming another
+      one. A session on hold stays open and can be resumed later.
     </p>`}
-    <button onClick=${end}>
-      ${capturing ? "End session" : "Close review"}
-    </button>
+    <div class="row">
+      ${capturing && html`<${HoldButton} notices=${notices} />`}
+      <button onClick=${end}>
+        ${capturing ? "End session (final)" : "Close review"}
+      </button>
+    </div>
   </section>`;
 }
 

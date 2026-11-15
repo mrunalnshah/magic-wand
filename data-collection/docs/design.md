@@ -1,6 +1,6 @@
 # Data Collection Application - Design
 
-> **Version** 16 | **Updated** 2026-11-14 | **Approved**
+> **Version** 17 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -148,6 +148,11 @@ built from eleven components:
   camera in use, and capture can start. Capture cannot start before that.
 - **End** is requested by the user. It records the end time and stops
   capturing.
+- **Hold** is requested by the user. It stops capturing and unloads the
+  session without recording an end time, so the session stays open on disk,
+  as when the application is closed. The working settings keep the values of
+  the held session and unlock. Another session can then be started or loaded,
+  and the held one resumed later (with the camera check).
 
 ### 3.3 Calibration
 
@@ -517,6 +522,9 @@ resuming, and the numbering of samples.
 - **End**: only when the user asks. It records `endedAt`, tells the Capture
   Controller to stop, and clears the session in the Application State. Closing
   the application leaves the session open.
+- **Hold**: the same as End without recording `endedAt`: it tells the Capture
+  Controller to stop and clears the session in the Application State, and the
+  session stays open on disk.
 - **List**: the sessions in the data folder, with name, author, start time,
   sample count, and whether each is open or ended.
 - **Load for review**: any session. It records it in the Application State as
@@ -793,6 +801,7 @@ the Web UI shows about the current state comes from `state`.
 | `POST /api/sessions` | Start a session |
 | `POST /api/sessions/{id}/load` | Load a session; `mode=review` or `resume` |
 | `POST /api/sessions/current/end` | End the session |
+| `POST /api/sessions/current/hold` | Put the session on hold: unload it and keep it open |
 | `PATCH /api/sessions/{id}` | Change the name and/or notes of any session |
 | `DELETE /api/sessions/{id}` | Delete a session that is not loaded |
 | `POST /api/labels` | Add a label |

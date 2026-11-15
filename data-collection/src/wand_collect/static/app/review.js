@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { ApiError, api } from "./api.js";
+import { HoldButton } from "./hold.js";
 import { html } from "./html.js";
 import {
   LabelSelect,
@@ -250,6 +251,7 @@ export function Review({ snapshot, shortcuts, notices }) {
         onClick=${resume}
         disabled=${!session}
       />
+      ${capturing && html`<${HoldButton} notices=${notices} />`}
       <span class="hint">${items.length} samples</span>
     </div>
     ${items.length === 0 &&

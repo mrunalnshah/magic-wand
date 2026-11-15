@@ -158,6 +158,12 @@ column is filled in by task DC-S2.
   Expect: Capture works with that camera, and the session's `camera` in
   `session.json` is the new one.
 
+- **6.7** Start a session and record a sample. Press Put on hold. Start a new
+  session, record a sample, and put it on hold too. Resume the first one.
+  Expect: Both sessions are listed as open. The first resumes with the camera
+  check, its next sample number follows its last, and the second is
+  unchanged.
+
 ### Check, merge, export and missing clips
 
 - **7.1** Run `uv run wand-collect check <folder>`.
@@ -209,6 +215,7 @@ column is filled in by task DC-S2.
 | 6.4 | fail |  |
 | 6.5 | n/a |  |
 | 6.6 | |  |
+| 6.7 | |  |
 | 7.1 | pass |  |
 | 7.2 | pass |  |
 | 7.3 | pass |  |

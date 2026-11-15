@@ -1,6 +1,6 @@
 # Data Collection Application - Requirements
 
-> **Version** 12 | **Updated** 2026-11-14 | **Approved**
+> **Version** 13 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -86,7 +86,10 @@ this document:
   session record then takes the camera that is in use.
 - R2.7 **Ending a session.** A session ends only when the user ends it.
   Closing the application leaves the session open, so it can be resumed
-  later. An ended session accepts no new samples, but its samples can still be
+  later. The user can also **put a session on hold** without ending it:
+  capturing stops and the session is unloaded but stays open, so another
+  session can be started or loaded meanwhile and the held one resumed later.
+  An ended session accepts no new samples, but its samples can still be
   reviewed and edited (R5, R7).
 - R2.8 **Deleting a session.** The user can delete a session that is not
   loaded, with all its samples and clips, after a confirmation. Deleting is

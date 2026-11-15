@@ -220,6 +220,60 @@ def test_end_without_a_session_is_refused(rig):
     assert response.json()["error"]["code"] == "no_session"
 
 
+def test_hold_stops_capture_unloads_the_session_and_keeps_it_open(rig):
+    session_id = rig.start().json()["id"]
+    assert rig.client.post("/api/sessions/current/hold").status_code == 204
+    assert rig.log == ["stop"]
+    assert session_on_disk(rig, session_id).ended_at is None
+    assert rig.state.snapshot.session is None
+    listed = rig.client.get("/api/sessions").json()
+    assert [(e["id"], e["open"]) for e in listed] == [(session_id, True)]
+    unlocked = rig.client.put(
+        "/api/settings", json={"vision": {"hueCenter": 5}}
+    )
+    assert unlocked.status_code == 204
+
+
+def test_a_new_session_can_start_while_another_is_on_hold(rig):
+    first = rig.start(name="First").json()["id"]
+    assert rig.start().status_code == 409  # still loaded: refused
+    rig.client.post("/api/sessions/current/hold")
+    second = rig.start(name="Second")
+    assert second.status_code == 200
+    assert second.json()["id"] != first
+    assert rig.state.snapshot.session.id == second.json()["id"]
+    assert session_on_disk(rig, first).ended_at is None
+    rig.client.post("/api/sessions/current/hold")
+    assert [e["open"] for e in rig.client.get("/api/sessions").json()] == [
+        True,
+        True,
+    ]
+
+
+def test_a_session_on_hold_can_be_resumed_and_checked(rig):
+    session_id = rig.start().json()["id"]
+    rig.client.post("/api/sessions/current/hold")
+    response = rig.client.post(f"/api/sessions/{session_id}/load?mode=resume")
+    assert response.status_code == 200
+    assert response.json()["cameraCheck"] is True
+    assert rig.state.snapshot.session.id == session_id
+
+
+def test_hold_without_a_session_is_refused(rig):
+    response = rig.client.post("/api/sessions/current/hold")
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "no_session"
+
+
+def test_hold_of_a_session_open_for_review_just_closes_it(rig):
+    session_id = start_and_close(rig)
+    rig.client.post(f"/api/sessions/{session_id}/load?mode=review")
+    assert rig.client.post("/api/sessions/current/hold").status_code == 204
+    assert rig.state.snapshot.session is None
+    assert session_on_disk(rig, session_id).ended_at is None
+    assert rig.log == []  # nothing was capturing
+
+
 def test_closing_the_application_leaves_the_session_open(rig):
     session_id = rig.start().json()["id"]
     rig.close()

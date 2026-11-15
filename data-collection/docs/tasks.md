@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 18 | **Updated** 2026-11-14 | **Approved**
+> **Version** 19 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -159,6 +159,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-A13 | Session name and notes | Completed |
 | DC-A14 | Frame-rate measurement | Completed |
 | DC-A15 | Camera check on resume | Completed |
+| DC-A16 | Put a session on hold | Completed |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
 | DC-U3 | Calibrate page | Completed |
@@ -194,7 +195,7 @@ Every part of the approved designs is assigned to at least one task.
 | 4.2 Application Server | DC-A2, DC-A4 |
 | 4.3 Application State | DC-A1 |
 | 4.4 Calibration Service | DC-A5 |
-| 4.5 Session Service | DC-A9, DC-A13, DC-A15 |
+| 4.5 Session Service | DC-A9, DC-A13, DC-A15, DC-A16 |
 | 4.6 Capture Engine | DC-A3, DC-A14 |
 | 4.7 Capture Controller | DC-A10 |
 | 4.8 Clip Writer | DC-A7, DC-S1 |
@@ -1594,6 +1595,45 @@ settings read-only except the camera, and waits for the user to continue.
 `static/app/setup.js`. The session keeps one camera in its record: a session
 that is continued on a different camera has the later camera recorded, and the
 earlier samples keep the position data, which is normalized and so unaffected.
+
+### DC-A16 Put a session on hold
+
+- **Type**: feat
+- **Status**: Completed
+- **Depends on**: DC-A9, DC-A15, DC-U2, DC-U3, DC-U4, DC-U5
+- **Requirements**: R2.7
+- **Design**: DC 3.2, 4.5
+
+**Description.** Once a session is loaded for capture, the only way to start or
+resume another one was to end it for good, or to stop and start the
+application. Add a way to put the loaded session on hold: capturing stops and
+the session is unloaded, but it stays open on disk (as when the application is
+closed), so it can be resumed later and another session can be started or
+loaded meanwhile. `POST /api/sessions/current/hold` does it. It is the same as
+ending a session without writing `endedAt`.
+
+**Acceptance criteria.**
+
+- [x] `POST /api/sessions/current/hold` stops the Capture Controller (waiting
+      for a sample being saved), clears the session in the state and leaves
+      `endedAt` empty. It answers 409 `no_session` when no session is loaded.
+      For a session loaded only for review it just closes it.
+- [x] After a hold, settings and the camera can change again, a new session can
+      be started, another session can be loaded, and the held session is listed
+      as open and can be resumed (with the camera check, DC-A15).
+- [x] The working settings keep the values of the held session; nothing is
+      reset.
+- [x] The UI offers "Put on hold (resume later)" next to "End session (final)"
+      on the Setup page (current session), the Calibrate page (locked, and the
+      camera check), and by itself on the Record page and, while capturing, the
+      Review page. A held session leaves the user on Setup. Pressing the button
+      on the Record page does not also pause (the page's click-to-pause ignores
+      buttons).
+- [x] Tests cover each of these.
+
+**Implementation notes.** `SessionService.hold` and `end` share `_leave`;
+`HoldButton` in `static/app/hold.js`. A review-only session keeps its "Close
+review" button.
 
 ## 9. Web UI tasks
 
