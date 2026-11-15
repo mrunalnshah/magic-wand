@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { api } from "./api.js";
 import { html } from "./html.js";
 import { PAGES, pageAfter, pageFor } from "./nav.js";
+import { Notices } from "./noticebar.js";
 import { createNotices } from "./notices.js";
 import { renderPage } from "./pages/index.js";
 import { createShortcuts } from "./shortcuts.js";
@@ -26,23 +27,6 @@ function Indicator({ connected }) {
   const text = connected ? "Connected" : "Reconnecting...";
   return html`<div class=${"indicator" + (connected ? " connected" : "")}>
     <span class="dot"></span>${text}
-  </div>`;
-}
-
-function Notices({ items }) {
-  return html`<div class="notices" role="alert">
-    ${items.map(
-      (item) => html`<div class="notice" key=${item.id}>
-        <span>${item.message}</span>
-        <span class="code">${item.code}</span>
-        <button
-          aria-label="Dismiss"
-          onClick=${() => notices.dismiss(item.id)}
-        >
-          ×
-        </button>
-      </div>`,
-    )}
   </div>`;
 }
 
@@ -76,7 +60,7 @@ function App() {
       </nav>
       <${Indicator} connected=${connected} />
     </header>
-    <${Notices} items=${items} />
+    <${Notices} items=${items} notices=${notices} />
     <main>
       ${snapshot
         ? renderPage(page, current.title, {
@@ -96,7 +80,11 @@ async function start() {
   if (config) shortcuts.setBindings(config.shortcuts);
   shortcuts.attach();
   connectEvents(store);
-  render(html`<${App} />`, document.getElementById("app"));
+  // Drawing adds to the element and does not replace what is in it, so the
+  // "Loading..." text of index.html has to be cleared first.
+  const app = document.getElementById("app");
+  app.textContent = "";
+  render(html`<${App} />`, app);
 }
 
 start();

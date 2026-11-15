@@ -89,6 +89,8 @@ nav button[aria-current="page"] {
 }
 
 .notice {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -101,6 +103,35 @@ nav button[aria-current="page"] {
 .notice .code {
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+/* The time left before a notice goes away. */
+.notice-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--bad);
+  transform-origin: left;
+  animation: notice-countdown linear forwards;
+}
+
+@keyframes notice-countdown {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice-bar {
+    animation: none;
+    display: none;
+  }
 }
 
 .notice button {
@@ -242,6 +273,22 @@ kbd {
   align-items: center;
   gap: 8px;
   margin: 8px 0;
+}
+
+/* A label and its field sit side by side, centred on each other. */
+.row > label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Buttons and fields in a row are the same height, so they line up. */
+.row button,
+.row select,
+.row input[type="text"],
+.row input[type="number"] {
+  box-sizing: border-box;
+  min-height: 2.25rem;
 }
 
 button {

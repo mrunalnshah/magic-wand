@@ -1,5 +1,8 @@
 // Notices shown at the top of the page. A failed request becomes a notice
-// with the server's error code and message; the user can dismiss it.
+// with the server's error code and message. A notice goes away when the user
+// dismisses it or after a few seconds (the view does that). The same notice
+// added again while it is showing is not repeated: it is renewed, which
+// restarts its timer.
 
 import { ApiError } from "./api.js";
 
@@ -15,7 +18,14 @@ export function createNotices() {
       return () => listeners.delete(listener);
     },
     add(message, code = "") {
-      items = [...items, { id: nextId++, message, code }];
+      const same = items.find(
+        (item) => item.message === message && item.code === code,
+      );
+      items = same
+        ? items.map((item) =>
+            item === same ? { ...item, renewals: item.renewals + 1 } : item,
+          )
+        : [...items, { id: nextId++, message, code, renewals: 0 }];
       publish();
     },
     dismiss(id) {

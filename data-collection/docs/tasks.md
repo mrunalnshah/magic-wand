@@ -168,7 +168,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U8 | No-camera message | Completed |
 | DC-U9 | Delete without an error notice | Completed |
 | DC-U10 | Review grid and Space key | Completed |
-| DC-U11 | Notices and page polish | Not started |
+| DC-U11 | Notices and page polish | Completed |
 | DC-U12 | Save to the loaded profile | Not started |
 | DC-U13 | Keyboard scrubbing | Not started |
 | DC-U14 | Scrubbing without a clip | Not started |
@@ -1970,7 +1970,7 @@ change if the grid is large (DC-A8).
 ### DC-U11 Notices and page polish
 
 - **Type**: fix
-- **Status**: Not started
+- **Status**: Completed
 - **Depends on**: DC-U1, DC-U2
 - **Requirements**: none (usability)
 - **Design**: DC 4.1
@@ -1984,21 +1984,21 @@ the Setup page are not aligned.
 
 **Acceptance criteria.**
 
-- [ ] The "Loading..." text is gone from every page once the application has
+- [x] The "Loading..." text is gone from every page once the application has
       started. It may still show before the scripts run, and then disappears
       when the first page is drawn.
-- [ ] A notice dismisses itself after 6 seconds, and shows a thin bar that
+- [x] A notice dismisses itself after 6 seconds, and shows a thin bar that
       shrinks to show the time left. Pausing the pointer over a notice stops
       the timer, and it restarts when the pointer leaves. Clicking dismiss
       still removes it at once.
-- [ ] A notice for an error that is repeated (the same message and code)
+- [x] A notice for an error that is repeated (the same message and code)
       shown while the first is visible restarts the timer of the first and
       does not add another.
-- [ ] The camera selector and the refresh button on the Setup page have the
+- [x] The camera selector and the refresh button on the Setup page have the
       same height and share a baseline, at any window width.
-- [ ] The shrinking bar respects the reduced motion setting of the browser:
+- [x] The shrinking bar respects the reduced motion setting of the browser:
       the notice still disappears, and the bar is not animated.
-- [ ] Tests cover the timer, the pause and the repeat.
+- [x] Tests cover the timer, the pause and the repeat.
 
 **Implementation notes.** `static/index.html`, `static/app/notices.js` (an
 `expiresAt` per item, and a timer owned by the component in `main.js`), CSS in
