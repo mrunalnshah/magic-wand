@@ -64,7 +64,8 @@ class Shortcuts(SettingsModel):
     # One key or a list of keys; the first is shown on the button.
     reject: str | list[str] = [" ", "r"]
     delete: str = "Backspace"
-    toggle_view: str = "p"
+    toggle_view: str = "v"
+    scrub_open: str = "s"
     # The scrubbing view.
     scrub_play: str = " "
     scrub_back: str = "ArrowLeft"

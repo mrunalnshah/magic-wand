@@ -149,6 +149,8 @@ export function SampleDetail({
   useEffect(() => shortcuts.on("reject", toggle));
   useEffect(() => shortcuts.on("delete", remove));
   useEffect(() => shortcuts.on("toggleView", () => setOverlay((v) => !v)), []);
+  // The scrubbing view opens with a key once the sample has loaded.
+  useEffect(() => shortcuts.on("scrubOpen", () => details && onScrub()));
   useLabelKeys(shortcuts, snapshot, relabel);
 
   return html`<aside class="detail-pane">
@@ -176,6 +178,8 @@ export function SampleDetail({
         <kbd>${shortcuts.keyFor("toggleView")}</kbd>
         <button disabled=${!details} onClick=${onScrub}>
           ${hasClip ? "Scrub video" : "Scrub path"}
+          ${shortcuts.keyFor("scrubOpen") &&
+          html` <kbd>${shortcuts.keyFor("scrubOpen")}</kbd>`}
         </button>
       </div>
       <dl class="facts">

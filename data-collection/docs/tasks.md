@@ -2317,7 +2317,7 @@ page can use them next (DC-U18, to be written).
       scrolls instead, and the panel stays stuck to the top of it.
 - [x] The first sample is selected when the grid loads. Browse has the keys of
       Review: Left and Right, Up and Down by a row, Space or `r` to reject or
-      restore, Backspace to delete, `p` for the overlay, and the digits to
+      restore, Backspace to delete, `v` for the overlay, `s` to scrub, and the digits to
       relabel. Left and Right past the end of a page go to the next or the
       previous page.
 - [x] Scrub video or path replaces the workspace and takes over the keys, as on

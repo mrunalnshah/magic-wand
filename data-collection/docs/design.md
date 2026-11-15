@@ -1,6 +1,6 @@
 # Data Collection Application - Design
 
-> **Version** 21 | **Updated** 2026-11-15 | **Approved**
+> **Version** 22 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -305,7 +305,8 @@ shows what the Application State says.
 | Up, Down | In review and Browse: the sample one row above or below in the grid |
 | Space, R | In review: reject the selected sample (again to accept it) |
 | Backspace | In review: delete the selected sample |
-| P | Switch path-only and overlay views |
+| V | Switch path-only and overlay views |
+| S | Open the scrubbing view (a video, or the path when there is no clip) |
 | 1 to 9 | Capturing: set the active label. In review: relabel the sample |
 | Space, Left, Right, Shift with Left or Right, Home, End, F, V, Esc | In the scrubbing view, which takes over the keys while it is open: play or pause, one frame back or forward, ten frames, first or last frame, full screen, show or hide the video, leave full screen and then close |
 

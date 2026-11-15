@@ -37,7 +37,8 @@ shortcuts:
   down: ArrowDown
   reject: [" ", r]
   delete: Backspace
-  toggleView: p
+  toggleView: v
+  scrubOpen: s
   # The scrubbing view takes over the keys while it is open.
   scrubPlay: " "
   scrubBack: ArrowLeft
