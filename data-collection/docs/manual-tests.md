@@ -1,6 +1,6 @@
 # Data Collection Application - Manual Tests
 
-> **Version** 2 | **Updated** 2026-11-15 | **Draft**
+> **Version** 3 | **Updated** 2026-11-15 | **Draft**
 
 ## Overview
 
@@ -217,7 +217,7 @@ column is filled in by task DC-S2.
 | 0.3 | pass |  |
 | 1.1 | pass |  |
 | 1.2 | pass |  |
-| 1.2b | |  |
+| 1.2b | pass* |  |
 | 1.3 | pass |  |
 | 1.4 | pass |  |
 | 2.1 | pass |  |
@@ -242,12 +242,12 @@ column is filled in by task DC-S2.
 | 6.1 | pass |  |
 | 6.2 | pass |  |
 | 6.3 | pass |  |
-| 6.4 | fail |  |
+| 6.4 | fail, then pass* |  |
 | 6.5 | n/a |  |
-| 6.6 | |  |
-| 6.7 | |  |
-| 6.8 | |  |
-| 6.9 | |  |
+| 6.6 | pass* |  |
+| 6.7 | pass* |  |
+| 6.8 | pass* |  |
+| 6.9 | pass* |  |
 | 7.1 | pass |  |
 | 7.2 | pass |  |
 | 7.3 | pass |  |
@@ -256,6 +256,19 @@ column is filled in by task DC-S2.
 | 2.2A, 2.2B, 2.2C | A pass, B and C n/a | |
 | 2.3A, 2.3B, 2.3C | A pass, B and C n/a | |
 | 2.4A, 2.4B, 2.4C | A pass, B and C n/a | |
+
+Notes on the macOS results:
+
+- A result marked `pass*` was not checked step by step. The person who ran the
+  first pass used the application repeatedly afterwards, with the changes in
+  place, and found these working. Step 6.4 failed in the first pass (the wrong
+  camera was reopened, with no warning); the camera check on resume (DC-A15)
+  replaced that behaviour, and it was found working in the same way.
+- Conditions B and C of the calibration steps (dim light, mixed light with a
+  cluttered desk) and step 6.5 (a camera with another mode) were not run: there
+  was no setup for them. They stay open for a later run.
+- Run on macOS with Chrome, a built-in camera, an external webcam and a phone
+  camera. The Linux column is for DC-S2.
 
 ## 4. Follow-up tasks
 

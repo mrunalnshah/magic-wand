@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 25 | **Updated** 2026-11-15 | **Approved**
+> **Version** 26 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -181,7 +181,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U13 | Keyboard scrubbing | Completed |
 | DC-U14 | Scrubbing without a clip | Completed |
 | DC-V1 | Whole-application test | Completed |
-| DC-V2 | Real-camera testing | In progress |
+| DC-V2 | Real-camera testing | Completed |
 | DC-V3 | Motion threshold tuning | Not started |
 
 ## 4. Coverage of the design
@@ -2473,7 +2473,7 @@ countdown in the test configuration.
 ### DC-V2 Real-camera testing
 
 - **Type**: chore
-- **Status**: In progress
+- **Status**: Completed
 - **Depends on**: DC-U6
 - **Requirements**: R1.7, N3, N4, R6.7
 - **Design**: DC 7
@@ -2488,15 +2488,21 @@ checklist.
       covering camera selection, calibration under different lighting and
       backgrounds, motion tuning, a capture run, pause and review, resume,
       camera check on resume, merge, and the missing-clip behavior.
-- [ ] It has been run on macOS, and the results are recorded in the document
+- [x] It has been run on macOS, and the results are recorded in the document
       with a column left for Linux (filled in by DC-S2).
-- [ ] The live view keeps up with the camera, and no dropped frames corrupt
+- [x] The live view keeps up with the camera, and no dropped frames corrupt
       tracking (N3).
-- [ ] Problems found are recorded as follow-up tasks.
+- [x] Problems found are recorded as follow-up tasks.
 
-**Progress.** The checklist is written
-(`data-collection/docs/manual-tests.md`). The macOS run, the recorded
-results and any follow-up tasks need a person with the real camera and wand.
+**Progress.** The checklist is written and was run on macOS with Chrome, a
+built-in camera, an external webcam and a phone camera
+(`data-collection/docs/manual-tests.md`). Most steps passed in a step-by-step
+pass. The failure it found (step 6.4) and the smaller problems became tasks
+DC-U8 to DC-U19, DC-A14 to DC-A17, all implemented. The steps added afterwards
+were checked informally, by repeated use of the application with the changes
+in place, not step by step (marked `pass*`). Not run: conditions B and C of the
+calibration steps and step 6.5, for lack of a setup. The Linux column is left
+for DC-S2.
 
 **Implementation notes.** `data-collection/docs/manual-tests.md`. Include the
 camera permission step on macOS.
