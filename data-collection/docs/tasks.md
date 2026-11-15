@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 29 | **Updated** 2026-11-15 | **Approved**
+> **Version** 30 | **Updated** 2026-11-15 | **Approved**
 
 ## 1. Overview
 
@@ -128,7 +128,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-D0 | Project documents | Completed |
 | DC-D1 | Requirements | Completed |
 | DC-D2 | Design | Completed |
-| DC-D3 | Task list | In progress |
+| DC-D3 | Task list | Completed |
 | DC-F1 | Workspace and tooling | Completed |
 | DC-F2 | Configuration and settings models | Completed |
 | DC-S1 | H.264 encoding spike | Completed |
@@ -277,8 +277,14 @@ them the tasks cover R1.1 to R7.6 and N1 to N5. R7.5 is P2 (task DC-U7).
 ### DC-D3 Task list
 
 - **Type**: docs
-- **Status**: In progress
+- **Status**: Completed
 - **Description**: This document.
+
+The list is complete: every task in it is completed or explicitly parked, and
+section 4 maps every part of the design to a task. The document goes on being
+updated as the remaining tasks are done (DC-V3, which is deferred until real
+recordings exist, and step 4 of DC-S2, which needs a Linux machine with a
+camera); that upkeep is not part of this task.
 
 ## 6. Foundation tasks
 
