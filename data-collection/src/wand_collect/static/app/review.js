@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { api } from "./api.js";
+import { ApiError, api } from "./api.js";
 import { html } from "./html.js";
 import {
   LabelSelect,
@@ -113,14 +113,21 @@ export function Review({ snapshot, shortcuts, notices }) {
     load();
   }, [load, snapshot.samplesRevision]);
 
-  // The selected sample's details (whether it has a clip).
+  // The selected sample's details (whether it has a clip). A sample that is
+  // gone (deleted here, in another tab or by a command) answers 404: that is
+  // not an error to show, because the list is reloaded at the same time and
+  // moves the selection on.
   useEffect(() => {
     setDetails(null);
     if (!selected) return undefined;
     let current = true;
-    notices
-      .attempt(() => api.get(`/api/samples/${encodeURIComponent(selected)}`))
-      .then((found) => current && found && setDetails(found));
+    api
+      .get(`/api/samples/${encodeURIComponent(selected)}`)
+      .then((found) => current && found && setDetails(found))
+      .catch((error) => {
+        if (error instanceof ApiError && error.status === 404) return;
+        notices.add(error.message || String(error), error.code);
+      });
     return () => {
       current = false;
     };

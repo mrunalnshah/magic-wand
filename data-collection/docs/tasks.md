@@ -166,7 +166,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U6 | Browse page | Completed |
 | DC-U7 | Scrubbing view (P2) | Completed |
 | DC-U8 | No-camera message | Completed |
-| DC-U9 | Delete without an error notice | Not started |
+| DC-U9 | Delete without an error notice | Completed |
 | DC-U10 | Review grid and Space key | Not started |
 | DC-U11 | Notices and page polish | Not started |
 | DC-U12 | Save to the loaded profile | Not started |
@@ -1889,7 +1889,7 @@ that proves possible.
 ### DC-U9 Delete without an error notice
 
 - **Type**: fix
-- **Status**: Not started
+- **Status**: Completed
 - **Depends on**: DC-U5
 - **Requirements**: R5.3
 - **Design**: DC 4.1
@@ -1903,22 +1903,29 @@ moved to a neighbour. Find the cause, and make the delete leave no notice.
 
 **Acceptance criteria.**
 
-- [ ] The cause is found and written in the implementation notes, after
+- [x] The cause is found and written in the implementation notes, after
       reproducing the notice (a test or a recorded run).
-- [ ] Deleting the selected sample moves the selection to the next sample, or
+- [x] Deleting the selected sample moves the selection to the next sample, or
       to the previous one at the end of the list, and shows no notice.
-- [ ] Deleting a sample from another browser tab, or by the command line,
+- [x] Deleting a sample from another browser tab, or by the command line,
       while a page has it selected, also leaves no notice, and the selection
       moves on.
-- [ ] A real failure of a request (for example the server is down) still
+- [x] A real failure of a request (for example the server is down) still
       shows a notice.
-- [ ] A test covers the delete of the selected, the last and the only sample.
+- [x] A test covers the delete of the selected, the last and the only sample.
 
 **Implementation notes.** `static/app/review.js`: the effect that fetches the
 details of the selected sample runs on `selected` and `samplesRevision`, and
 `load` moves the selection. Compare `DC-U5`'s `nextSelection`. A 404 for a
 sample that is no longer in the list can be ignored, but only for the sample
 that was deleted, not for all requests.
+
+**Cause (confirmed).** Reproduced with a fake server in a browser-like test:
+after the delete the new revision reaches the page first, the effect asks for
+the details of the selected sample, which is already gone, and the 404 became a
+notice, while the list reload moved the selection on a moment later. The
+details request now treats a 404 as "gone" and shows nothing; other failures
+still show a notice.
 
 ### DC-U10 Review grid and Space key
 
