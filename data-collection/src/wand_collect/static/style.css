@@ -134,6 +134,12 @@ nav button[aria-current="page"] {
   }
 }
 
+.notice button:not(:disabled):hover {
+  background: none;
+  border: none;
+  color: var(--accent);
+}
+
 .notice button {
   margin-left: auto;
   background: none;
@@ -306,6 +312,17 @@ button[aria-pressed="true"] {
   color: var(--accent);
 }
 
+/* Every enabled button reacts to the pointer, so it is plain that it can be
+   pressed. */
+button:not(:disabled):hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--panel) 78%, var(--accent));
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
 button:disabled,
 input:disabled {
   opacity: 0.5;
@@ -453,6 +470,14 @@ select {
   margin: 8px 0;
 }
 
+.mode .actual.matches {
+  color: var(--ok);
+}
+
+.mode .actual.differs {
+  color: var(--accent);
+}
+
 table.sessions {
   width: 100%;
   border-collapse: collapse;
@@ -567,14 +592,65 @@ dd.rejected {
 }
 
 .strip .thumb {
+  position: relative;
   display: grid;
   gap: 2px;
   padding: 3px;
   width: 104px;
 }
 
+.strip .thumb.accepted {
+  border-color: color-mix(in srgb, var(--ok) 60%, var(--border));
+}
+
+.strip .thumb.rejected {
+  border-color: color-mix(in srgb, var(--bad) 65%, var(--border));
+}
+
 .strip .thumb[aria-current="true"] {
   border-color: var(--accent);
+}
+
+/* The accepted or rejected marker in the corner of a thumbnail. */
+.mark {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.accepted .mark {
+  background: var(--ok);
+  color: #000;
+}
+
+.rejected .mark {
+  background: var(--bad);
+  color: #fff;
+}
+
+.thumbwrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.thumbwrap.accepted img {
+  outline: 2px solid color-mix(in srgb, var(--ok) 60%, var(--border));
+}
+
+.thumbwrap.rejected img {
+  outline: 2px solid color-mix(in srgb, var(--bad) 65%, var(--border));
+  opacity: 0.5;
 }
 
 .strip .thumb.rejected img {

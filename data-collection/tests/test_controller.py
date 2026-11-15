@@ -532,6 +532,25 @@ def test_pause_and_resume_requests_check_the_state(rig):
     assert isinstance(rig.controller._queue.get(), Resume)
 
 
+def test_capture_waits_for_the_camera_check_of_a_resumed_session(rig):
+    rig.state.update(
+        Owner.SESSION_SERVICE,
+        session=SessionInfo(
+            rig.session.session_id,
+            "n",
+            SessionRole.CAPTURE,
+            camera_check=True,
+        ),
+    )
+    rig.label()
+    for path in ("/api/recording/start", "/api/recording/resume"):
+        response = rig.client.post(path)
+        assert response.status_code == 409, path
+        error = response.json()["error"]
+        assert error["code"] == "camera_check"
+        assert "Calibrate page" in error["message"]
+
+
 def test_the_loop_runs_a_whole_cycle_on_a_real_thread(tmp_path):
     import time
 

@@ -154,8 +154,12 @@ column is filled in by task DC-S2.
 - **6.4** Start a session, stop the application, unplug the camera, start again
   and resume.
   Expect: Resume goes ahead on the camera that is available and opens the
-  Calibrate page for the camera check, which names the camera the session was
-  recorded with. Starting capture is not possible before Continue to Record.
+  Calibrate page for the camera check, which says that every setting is locked
+  except the camera. Starting capture is not possible before Continue to
+  Record.
+  Then open Review and press the button at the top.
+  Expect: It reads "Check the camera first" and takes you back to Calibrate,
+  with no error.
 
 - **6.5** Resume with a camera that delivers another mode, if one is available.
   Expect: The session resumes and a warning names both modes.

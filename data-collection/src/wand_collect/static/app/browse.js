@@ -300,11 +300,16 @@ export function Browse({ snapshot, notices, shortcuts }) {
                 onClick=${() => setSelected(item.id)}
               >
                 <td>
-                  <img
-                    loading="lazy"
-                    src=${thumbnail(item.id)}
-                    alt=""
-                  />
+                  <span class=${"thumbwrap " + item.status}>
+                    <img
+                      loading="lazy"
+                      src=${thumbnail(item.id)}
+                      alt=""
+                    />
+                    <span class="mark" aria-hidden="true">
+                      ${item.status === "rejected" ? "✕" : "✓"}
+                    </span>
+                  </span>
                 </td>
                 <td>${labelName(snapshot, item.label)}</td>
                 <td class=${item.status}>${item.status}</td>

@@ -46,6 +46,12 @@ export function nextSelection(items, selectedId, previousIndex) {
   return items[items.length - 1].id;
 }
 
+// The symbol that marks a thumbnail as accepted or rejected (the colour
+// says the same, and the button's label gives the status in words).
+export function statusMark(status) {
+  return status === "rejected" ? "✕" : "✓";
+}
+
 // How many tiles are in one row of the grid: those that share the first
 // tile's top edge. One when the layout is not known.
 export function columnsOf(list) {
@@ -68,7 +74,7 @@ function Strip({ items, selected, onSelect, listRef }) {
     ${items.map(
       (item, index) => html`<li key=${item.id}>
         <button
-          class=${"thumb" + (item.status === "rejected" ? " rejected" : "")}
+          class=${"thumb " + item.status}
           aria-current=${item.id === selected ? "true" : undefined}
           aria-label=${`Sample ${index + 1}, ${item.status}`}
           onClick=${() => onSelect(item.id)}
@@ -78,6 +84,9 @@ function Strip({ items, selected, onSelect, listRef }) {
             src=${`/api/samples/${encodeURIComponent(item.id)}/thumbnail`}
             alt=""
           />
+          <span class="mark" aria-hidden="true">
+            ${statusMark(item.status)}
+          </span>
           <span>${index + 1}</span>
         </button>
       </li>`,
@@ -90,7 +99,7 @@ function formatDate(text) {
   return Number.isNaN(date.getTime()) ? text : date.toLocaleString();
 }
 
-export function Review({ snapshot, shortcuts, notices }) {
+export function Review({ snapshot, shortcuts, notices, goTo }) {
   const session = snapshot.session;
   const capturing = Boolean(session) && session.role === "capture";
   const [items, setItems] = useState([]);
@@ -200,12 +209,32 @@ export function Review({ snapshot, shortcuts, notices }) {
   };
   const chooseActive = (label) =>
     notices.attempt(() => api.put("/api/recording/label", { label }));
+  // A resumed session whose camera has not been checked goes back to
+  // Calibrate for the check; a session that is loaded but not capturing yet
+  // has nothing to resume, so it goes to Record.
+  const checking = capturing && Boolean(session.cameraCheck);
+  const notStarted = capturing && snapshot.capture.state === "STOPPED";
   const resume = () => {
+    if (checking) {
+      if (goTo) goTo("calibrate");
+      return undefined;
+    }
+    if (notStarted) {
+      if (goTo) goTo("record");
+      return undefined;
+    }
     const path = capturing
       ? "/api/recording/resume"
       : "/api/sessions/current/end";
     return notices.attempt(() => api.post(path));
   };
+  const resumeLabel = !capturing
+    ? "Close review"
+    : checking
+      ? "Check the camera first"
+      : notStarted
+        ? "Go to Record"
+        : "Resume capturing";
 
   useEffect(() => shortcuts.on("previous", () => step(-1)), [shortcuts, step]);
   useEffect(() => shortcuts.on("next", () => step(1)), [shortcuts, step]);
@@ -249,7 +278,7 @@ export function Review({ snapshot, shortcuts, notices }) {
       <${Button}
         shortcuts=${shortcuts}
         action=${capturing ? "pause" : ""}
-        label=${capturing ? "Resume capturing" : "Close review"}
+        label=${resumeLabel}
         onClick=${resume}
         disabled=${!session}
       />

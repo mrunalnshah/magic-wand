@@ -85,16 +85,11 @@ function CameraCheck({ snapshot, notices, goTo }) {
   return html`<section class="panel start">
       <h3>Check the camera</h3>
       <p>
-        ${session.name} was resumed. It was recorded with
-        ${session.recordedCamera || "an unknown camera"}. The settings are
-        locked to what the session was recorded with, so only the camera can
-        change. In the live view, switch to the mask and check that the wand
-        is tracked. If the camera is not the one you used before, choose it
-        below.
-      </p>
-      <p class="hint">
-        If you continue with a different camera, the session record takes it
-        from then on.
+        You are resuming session ${session.name}. All settings are locked to
+        those used during the original recording, except for the camera.
+        Please select the same camera you used previously to ensure consistent
+        tracking. If unsure, end this session and start a new one with the
+        desired camera with appropriate calibration settings.
       </p>
       <div class="row">
         <button disabled=${!snapshot.camera.device} onClick=${confirm}>

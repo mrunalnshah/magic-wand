@@ -1,6 +1,6 @@
 # Data Collection Application - Tasks
 
-> **Version** 20 | **Updated** 2026-11-14 | **Approved**
+> **Version** 21 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -161,6 +161,8 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-A15 | Camera check on resume | Completed |
 | DC-A16 | Put a session on hold | Completed |
 | DC-A17 | Camera list cache | Completed |
+| DC-U15 | Wording, hover and resume-flow polish | Completed |
+| DC-U16 | Accepted and rejected markers | Completed |
 | DC-U1 | Web UI shell | Completed |
 | DC-U2 | Setup page | Completed |
 | DC-U3 | Calibrate page | Completed |
@@ -192,7 +194,7 @@ Every part of the approved designs is assigned to at least one task.
 | 3.2 Session lifecycle | DC-A9, DC-A1, DC-L9 |
 | 3.3 Calibration | DC-A5, DC-U3, DC-L6, DC-L7 |
 | 3.4 Capture cycle | DC-A10, DC-A3, DC-A7, DC-U4, DC-U5 |
-| 4.1 Web UI | DC-U1 to DC-U14 |
+| 4.1 Web UI | DC-U1 to DC-U16 |
 | 4.2 Application Server | DC-A2, DC-A4 |
 | 4.3 Application State | DC-A1 |
 | 4.4 Calibration Service | DC-A5, DC-A17 |
@@ -1580,10 +1582,10 @@ settings read-only except the camera, and waits for the user to continue.
       `camera_unavailable` when there is no camera in use. Editing the
       session's name or notes does not clear the check.
 - [x] Resume (from the session list, or of the loaded session) opens the
-      Calibrate page, which shows a "Check the camera" panel naming the recorded
-      camera, the camera selector, "Continue to Record" (disabled without a
-      camera) and "End session". The live view and mask are those of the
-      Calibrate page.
+      Calibrate page, which shows a "Check the camera" panel with the session's
+      name and the wording in DC-U15, the camera selector, "Continue to Record"
+      (disabled without a camera) and "End session". The live view and mask are
+      those of the Calibrate page.
 - [x] The Record page's Start is disabled with an explanation while the check
       is due.
 - [x] Tests cover each of these, and the requirement, design and earlier
@@ -2209,6 +2211,71 @@ shape`)`), measured in Chrome at three window sizes and two frame shapes.
 **Implementation notes.** `static/app/scrub.js`: for a sample with a clip the
 video's time drives the display (`countUpTo`); without one, a timer driven by
 `requestAnimationFrame` plays the same role. Keep one code path for drawing.
+
+### DC-U15 Wording, hover and resume-flow polish
+
+- **Type**: fix
+- **Status**: Completed
+- **Depends on**: DC-U2, DC-U5, DC-A15
+- **Requirements**: none (usability)
+- **Design**: DC 4.1
+
+**Description.** Four things found while testing. The camera line on Setup was
+one long sentence ("In use: index:0, asked for ..."). The text of the camera
+check read badly. Buttons gave no sign that they could be pressed. And on the
+Review page of a resumed session, the "Resume capturing" button failed with
+"Capture is not paused", because the camera had not been checked yet.
+
+**Acceptance criteria.**
+
+- [x] The Setup page shows two lines for the camera: "Requested: <mode>" and
+      "Actual: <mode>". The actual mode is green when it is what was asked for,
+      amber when it is not, and plain while the frame rate is being measured.
+      The warning about a different mode stays.
+- [x] The camera check text reads: "You are resuming session <name>. All
+      settings are locked to those used during the original recording, except
+      for the camera. Please select the same camera you used previously to
+      ensure consistent tracking. If unsure, end this session and start a new
+      one with the desired camera with appropriate calibration settings." It has
+      no other paragraph.
+- [x] Every enabled button changes its border and background when the pointer
+      is over it, and moves a pixel when pressed. Disabled buttons do not. The
+      dismiss cross on a notice changes only its colour.
+- [x] On the Review page of a session loaded for capture, the top button reads
+      "Check the camera first" and goes to Calibrate while the camera is
+      unchecked, reads "Go to Record" and goes to Record when capture has not
+      started, and reads "Resume capturing" only when capture is paused. The
+      server refuses `POST /api/recording/resume` with 409 `camera_check` and
+      the same message as for start while the check is due.
+- [x] Tests cover each of these.
+
+**Implementation notes.** `CameraPanel` in `static/app/setup.js`,
+`CameraCheck` in `static/app/calibrate/index.js`, the `button` rules in
+`static/style.css`, `Review` and `CaptureController.post_resume`.
+
+### DC-U16 Accepted and rejected markers
+
+- **Type**: feat
+- **Status**: Completed
+- **Depends on**: DC-U5, DC-U6
+- **Requirements**: R5.1
+- **Design**: DC 4.1
+
+**Description.** The thumbnails of the Review page showed a rejected sample only
+by dimming it. Mark both states plainly, with colour and a symbol so that it
+does not rely on colour alone.
+
+**Acceptance criteria.**
+
+- [x] Each tile on the Review page has a green border and a green "✓" in its
+      corner when the sample is accepted, and a red border, a red "✕" and a
+      dimmed picture when it is rejected. The selected tile keeps its own
+      border colour. The tile's label still gives the status in words.
+- [x] The thumbnails in the Browse table have the same marker and border.
+- [x] The marker stays inside the tile (checked in Chrome).
+
+**Implementation notes.** `statusMark` in `static/app/review.js`; `.mark`,
+`.thumbwrap` and `.strip .thumb.accepted|rejected` in `static/style.css`.
 
 ## 10. Verification tasks
 

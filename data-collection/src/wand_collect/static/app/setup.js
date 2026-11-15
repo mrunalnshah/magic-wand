@@ -83,9 +83,18 @@ export function CameraPanel({ snapshot, notices, preview = true }) {
   const [cameras, setCameras] = useState(null);
   const camera = snapshot.camera;
   const locked = cameraLocked(snapshot);
-  const inUse =
-    `In use: ${camera.device}, asked for ${describeMode(camera.requested)}, ` +
-    `delivering ${describeMode(camera.actual, camera.fpsMeasured)}.`;
+  // The delivered mode is green when it is what was asked for, amber when it
+  // is not, and plain while the frame rate is still being measured.
+  const differs = modesDiffer(
+    camera.requested,
+    camera.actual,
+    camera.fpsMeasured,
+  );
+  const actualClass = !camera.fpsMeasured
+    ? "actual"
+    : differs
+      ? "actual differs"
+      : "actual matches";
 
   // The server keeps the list it found the first time, so loading it again
   // (when the page opens or the camera changes) costs nothing. Looking for
@@ -127,11 +136,14 @@ export function CameraPanel({ snapshot, notices, preview = true }) {
     ${cameras && cameras.length === 0 &&
     html`<${NoCameras} mac=${isMac()} onRetry=${refresh} />`}
     ${camera.device
-      ? html`<p class="mode">
-          ${inUse}
-        </p>`
+      ? html`<div class="mode">
+          <div>Requested: ${describeMode(camera.requested)}</div>
+          <div class=${actualClass}>
+            Actual: ${describeMode(camera.actual, camera.fpsMeasured)}
+          </div>
+        </div>`
       : html`<p class="hint">No camera is in use.</p>`}
-    ${modesDiffer(camera.requested, camera.actual, camera.fpsMeasured) &&
+    ${differs &&
     html`<p class="locked" role="status">
       The camera delivers a different mode than was asked for. Recordings
       will use ${describeMode(camera.actual, camera.fpsMeasured)}.

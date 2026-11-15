@@ -454,6 +454,12 @@ class CaptureController:
         self.post(Pause())
 
     def post_resume(self) -> None:
+        session = self._state.snapshot.session
+        if session is not None and session.camera_check:
+            raise ConflictError(
+                "camera_check",
+                "check the camera on the Calibrate page and continue first",
+            )
         if self._state.snapshot.capture.state is not CaptureStatus.PAUSED:
             raise ConflictError("not_paused", "capture is not paused")
         self.post(Resume())
