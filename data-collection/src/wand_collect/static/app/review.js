@@ -224,7 +224,7 @@ export function Review({ snapshot, shortcuts, notices }) {
   });
   useLabelKeys(shortcuts, snapshot, relabel);
 
-  if (scrubbing && hasClip && details) {
+  if (scrubbing && details) {
     return html`<${Scrub}
       id=${selected}
       details=${details}
@@ -280,10 +280,9 @@ export function Review({ snapshot, shortcuts, notices }) {
               Overlay on camera frame
             </button>
             <kbd>${shortcuts.keyFor("toggleView")}</kbd>
-            ${hasClip &&
-            html`<button onClick=${() => setScrubbing(true)}>
-              Scrub video
-            </button>`}
+            <button disabled=${!details} onClick=${() => setScrubbing(true)}>
+              ${hasClip ? "Scrub video" : "Scrub path"}
+            </button>
           </div>
           ${!hasClip &&
           html`<p class="hint">

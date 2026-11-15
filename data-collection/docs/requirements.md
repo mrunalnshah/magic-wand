@@ -1,6 +1,6 @@
 # Data Collection Application - Requirements
 
-> **Version** 10 | **Updated** 2026-11-05 | **Approved**
+> **Version** 11 | **Updated** 2026-11-14 | **Approved**
 
 ## 1. Overview
 
@@ -188,9 +188,11 @@ this document:
 - R6.9 **Missing video.** Video clips are optional. The app works when a
   sample's clip was never recorded, failed to encode, or was removed later.
   A failure to write a clip does not prevent the sample from being saved.
-  Features that need the clip (the overlay view and the P2 scrubbing view) are
-  unavailable for that sample and say so; every other feature, including the
-  path-only view, works unchanged.
+  Features that need the clip (the overlay view and the video in the P2
+  scrubbing view) are unavailable for that sample and say so; every other
+  feature, including the path-only view, works unchanged. The scrubbing view
+  itself also works without a clip: it replays the path from the stored
+  positions.
 
 ### R7. Load and review existing data (P1 unless noted)
 - R7.1 The user can open a data directory and browse existing samples,

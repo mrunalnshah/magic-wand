@@ -696,6 +696,11 @@ td.rejected {
   opacity: 0; /* still plays and keeps its size; only the path shows */
 }
 
+.scrub .blank {
+  width: min(100%, 640px);
+  max-height: 80vh;
+}
+
 .scrub video {
   display: block;
   max-width: 100%;

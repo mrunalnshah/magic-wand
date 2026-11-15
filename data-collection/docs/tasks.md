@@ -171,7 +171,7 @@ fields are snake case; in JSON and YAML they are camel case
 | DC-U11 | Notices and page polish | Completed |
 | DC-U12 | Save to the loaded profile | Completed |
 | DC-U13 | Keyboard scrubbing | Completed |
-| DC-U14 | Scrubbing without a clip | Not started |
+| DC-U14 | Scrubbing without a clip | Completed |
 | DC-V1 | Whole-application test | Completed |
 | DC-V2 | Real-camera testing | In progress |
 | DC-V3 | Motion threshold tuning | Not started |
@@ -1842,7 +1842,9 @@ frames with the path drawn over them. Only for samples with a clip.
       video keeps playing underneath and the highlighting and controls work
       as before. The choice carries over to the next sample scrubbed, and is
       forgotten when the page is reloaded (it is not stored).
-- [x] The view is not offered for a sample without a clip.
+- [x] The view is offered only for a sample with a clip. (Changed by DC-U14:
+      it is now offered for every sample, and without a clip it replays the
+      path.)
 
 **Implementation notes.** `static/app/scrub.js`. Use a `<video>` element and a
 canvas on top. Frame positions come from the sample's `positions` and
@@ -2081,7 +2083,7 @@ request must come from a key or click event handler.
 ### DC-U14 Scrubbing without a clip
 
 - **Type**: feat
-- **Status**: Not started
+- **Status**: Completed
 - **Depends on**: DC-U7, DC-U13
 - **Requirements**: R6.9, R7.5
 - **Design**: DC 4.1
@@ -2094,21 +2096,21 @@ always, and only the video is missing.
 
 **Acceptance criteria.**
 
-- [ ] The scrubbing view opens for a sample without a clip, from the Review
+- [x] The scrubbing view opens for a sample without a clip, from the Review
       and Browse pages, and shows its path on a black background, with the part
       up to the current position highlighted.
-- [ ] Playback follows the positions' times: it runs from the first position to
+- [x] Playback follows the positions' times: it runs from the first position to
       the last in the time the gesture took, and a gap where the tip was not
       found shows as a pause.
-- [ ] Stepping goes from one stored position to the next. The slider covers the
+- [x] Stepping goes from one stored position to the next. The slider covers the
       gesture's duration, and the keys of DC-U13 work.
-- [ ] The Show video button is disabled and says that there is no clip. V does
+- [x] The Show video button is disabled and says that there is no clip. V does
       nothing.
-- [ ] For a sample with a clip the view is as before.
-- [ ] DC-U7's criterion is updated to say that the view is offered for every
+- [x] For a sample with a clip the view is as before.
+- [x] DC-U7's criterion is updated to say that the view is offered for every
       sample, and `manual-tests.md` step 7.4 expects the scrubbing view to work
       without video.
-- [ ] Tests cover playback timing with a gap, stepping, and the disabled
+- [x] Tests cover playback timing with a gap, stepping, and the disabled
       button.
 
 **Implementation notes.** `static/app/scrub.js`: for a sample with a clip the

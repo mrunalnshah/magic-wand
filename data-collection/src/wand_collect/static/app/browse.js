@@ -178,7 +178,7 @@ function Detail({ snapshot, summary, notices, onClose, shortcuts }) {
   };
 
   const showOverlay = overlay && hasClip;
-  if (scrubbing && hasClip) {
+  if (scrubbing && details) {
     return html`<${Scrub}
       id=${id}
       details=${details}
@@ -205,14 +205,15 @@ function Detail({ snapshot, summary, notices, onClose, shortcuts }) {
       >
         Overlay on camera frame
       </button>`}
-      ${hasClip &&
-      html`<button onClick=${() => setScrubbing(true)}>Scrub video</button>`}
+      <button disabled=${!details} onClick=${() => setScrubbing(true)}>
+        ${hasClip ? "Scrub video" : "Scrub path"}
+      </button>
     </div>
     ${details &&
     !hasClip &&
     html`<p class="hint">
       This sample has no video clip, so the overlay and video views are not
-      available.
+      available. Its path can still be scrubbed.
     </p>`}
     <dl class="facts">
       <dt>Label</dt>

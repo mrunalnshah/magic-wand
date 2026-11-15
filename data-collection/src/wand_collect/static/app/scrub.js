@@ -1,8 +1,10 @@
 // The scrubbing view: one sample's video with its path drawn over it. The
-// part of the path up to the current frame is highlighted. Only for samples
-// that have a clip. Frame positions come from the sample's `positions` and
-// the clip's `gestureStartS`. It can be used with the keyboard: while it is
-// open it takes over the keys (see SCRUB_ACTIONS).
+// part of the path up to the current frame is highlighted. Frame positions
+// come from the sample's `positions` and the clip's `gestureStartS`. A sample
+// without a clip is scrubbed too: its path is replayed on a black background
+// by a PathPlayer, which keeps time itself and answers like a video element.
+// It can be used with the keyboard: while it is open it takes over the keys
+// (see SCRUB_ACTIONS).
 
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -27,6 +29,64 @@ export const SCRUB_ACTIONS = [
 const PATH_COLOR = "rgba(255, 255, 255, 0.35)";
 const DONE_COLOR = "#f0883e";
 const MARKER_COLOR = "#4cc38a";
+
+// A stand-in for a video element when a sample has no clip. It plays the
+// stored positions in real time, from 0 to the last position's time, and
+// offers what the view uses of a video: `currentTime`, `duration`, `paused`,
+// `play()`, `pause()` and the events "play", "pause" and "seeked".
+export class PathPlayer extends EventTarget {
+  constructor(duration, now = () => performance.now()) {
+    super();
+    this.duration = duration;
+    this._now = now;
+    this._time = 0;
+    this._playing = false;
+    this._last = 0;
+  }
+
+  get paused() {
+    this._advance();
+    return !this._playing;
+  }
+
+  get currentTime() {
+    this._advance();
+    return this._time;
+  }
+
+  set currentTime(seconds) {
+    this._advance();
+    this._time = Math.min(Math.max(0, seconds), this.duration);
+    this.dispatchEvent(new Event("seeked"));
+  }
+
+  play() {
+    if (this._time >= this.duration) this._time = 0; // replay from the start
+    this._playing = true;
+    this._last = this._now();
+    this.dispatchEvent(new Event("play"));
+  }
+
+  pause() {
+    this._advance();
+    if (!this._playing) return;
+    this._playing = false;
+    this.dispatchEvent(new Event("pause"));
+  }
+
+  // Moves the time on by the real time that has passed; stops at the end.
+  _advance() {
+    if (!this._playing) return;
+    const now = this._now();
+    this._time += (now - this._last) / 1000;
+    this._last = now;
+    if (this._time >= this.duration) {
+      this._time = this.duration;
+      this._playing = false;
+      this.dispatchEvent(new Event("pause"));
+    }
+  }
+}
 
 // Whether the user chose to show the video. The video starts hidden, and the
 // choice carries over to the next sample; reloading the page resets it.
@@ -70,7 +130,9 @@ export function drawPath(context, positions, count, width, height) {
 export function Scrub({ id, details, onClose, shortcuts }) {
   const stage = useRef(null);
   const video = useRef(null);
+  const blank = useRef(null); // the black surface when there is no clip
   const canvas = useRef(null);
+  const virtual = useRef(null);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -78,13 +140,23 @@ export function Scrub({ id, details, onClose, shortcuts }) {
   const [masked, setMasked] = useState(!videoShown);
 
   const positions = details.positions;
-  const start = details.video ? details.video.gestureStartS : 0;
+  const hasVideo = Boolean(details.hasClip && details.video);
+  const times = positions.timeS;
+  const start = hasVideo ? details.video.gestureStartS : 0;
+  if (!hasVideo && !virtual.current) {
+    const last = times.length ? times[times.length - 1] : 0;
+    virtual.current = new PathPlayer(last);
+  }
+  // The thing that keeps the time: the video, or the path player.
+  const getPlayer = () => (hasVideo ? video.current : virtual.current);
+  const surface = () => (hasVideo ? video.current : blank.current);
   const draw = () => {
     const element = canvas.current;
-    const player = video.current;
-    if (!element || !player) return;
-    element.width = player.clientWidth || 640;
-    element.height = player.clientHeight || 480;
+    const player = getPlayer();
+    const area = surface();
+    if (!element || !player || !area) return;
+    element.width = area.clientWidth || 640;
+    element.height = area.clientHeight || 480;
     const context = element.getContext("2d");
     if (!context) return;
     const count = countUpTo(positions.timeS, start, player.currentTime);
@@ -92,7 +164,7 @@ export function Scrub({ id, details, onClose, shortcuts }) {
   };
 
   useEffect(() => {
-    const player = video.current;
+    const player = getPlayer();
     const update = () => {
       setTime(player.currentTime);
       draw();
@@ -106,7 +178,11 @@ export function Scrub({ id, details, onClose, shortcuts }) {
     player.addEventListener("seeked", update);
     player.addEventListener("loadedmetadata", meta);
     player.addEventListener("play", () => setPlaying(true));
-    player.addEventListener("pause", () => setPlaying(false));
+    player.addEventListener("pause", () => {
+      setPlaying(false);
+      update(); // the last step of playback is drawn too
+    });
+    if (!hasVideo) meta(); // nothing to load: the player is ready now
     // While playing, follow the video every animation frame.
     let frame = 0;
     const follow = () => {
@@ -124,15 +200,23 @@ export function Scrub({ id, details, onClose, shortcuts }) {
   }, []);
 
   const seek = (seconds) => {
-    const player = video.current;
+    const player = getPlayer();
     const next = Math.min(Math.max(0, seconds), duration || seconds);
     player.currentTime = next;
     setTime(next);
   };
-  // A step starts from where the player is now, so quick clicks add up.
-  const step = (frames) => seek(video.current.currentTime + frames * FRAME_S);
+  // A step starts from where the player is now, so quick clicks add up. With
+  // a clip it is a frame of the video; without one it is a stored position.
+  const step = (frames) => {
+    const player = getPlayer();
+    if (hasVideo) return seek(player.currentTime + frames * FRAME_S);
+    if (times.length === 0) return undefined;
+    const at = countUpTo(times, 0, player.currentTime) - 1; // -1: before all
+    const target = Math.min(Math.max(at + frames, 0), times.length - 1);
+    return seek(times[target]);
+  };
   const toggle = () => {
-    const player = video.current;
+    const player = getPlayer();
     if (player.paused) player.play();
     else player.pause();
   };
@@ -142,6 +226,7 @@ export function Scrub({ id, details, onClose, shortcuts }) {
   };
 
   const toggleMask = () => {
+    if (!hasVideo) return; // there is no video to show
     videoShown = masked; // masked now, so the video is about to be shown
     setMasked(!masked);
   };
@@ -161,7 +246,7 @@ export function Scrub({ id, details, onClose, shortcuts }) {
     scrubBackMany: () => step(-MANY_FRAMES),
     scrubForwardMany: () => step(MANY_FRAMES),
     scrubStart: () => seek(0),
-    scrubEnd: () => seek(video.current.duration || 0),
+    scrubEnd: () => seek(getPlayer().duration || 0),
     scrubFullScreen: toggleFull,
     scrubVideo: toggleMask,
     scrubClose: close,
@@ -183,18 +268,27 @@ export function Scrub({ id, details, onClose, shortcuts }) {
     return text && html` <kbd>${text}</kbd>`;
   };
   const boxClass =
-    "box" + (details.mirrored ? " mirrored" : "") + (masked ? " masked" : "");
+    "box" +
+    (details.mirrored ? " mirrored" : "") +
+    (masked || !hasVideo ? " masked" : "");
+  const [width, height] = details.frameSize || [4, 3];
 
   return html`<section class="scrub" ref=${stage}>
     <div class="frame">
       <div class=${boxClass}>
-        <video
-          ref=${video}
-          src=${`/api/samples/${encodeURIComponent(id)}/video`}
-          preload="auto"
-          muted
-          playsinline
-        ></video>
+        ${hasVideo
+          ? html`<video
+              ref=${video}
+              src=${`/api/samples/${encodeURIComponent(id)}/video`}
+              preload="auto"
+              muted
+              playsinline
+            ></video>`
+          : html`<div
+              class="blank"
+              ref=${blank}
+              style=${{ aspectRatio: `${width} / ${height}` }}
+            ></div>`}
         <canvas ref=${canvas}></canvas>
       </div>
     </div>
@@ -219,7 +313,12 @@ export function Scrub({ id, details, onClose, shortcuts }) {
         onChange=${(event) => event.target.blur()}
       />
       <span class="hint">${time.toFixed(2)} s</span>
-      <button aria-pressed=${masked} onClick=${toggleMask}>
+      <button
+        aria-pressed=${masked}
+        disabled=${!hasVideo}
+        title=${hasVideo ? "" : "This sample has no video clip"}
+        onClick=${toggleMask}
+      >
         ${masked ? "Show video" : "Hide video"}${hint("scrubVideo")}
       </button>
       <button onClick=${toggleFull}>
@@ -227,6 +326,10 @@ export function Scrub({ id, details, onClose, shortcuts }) {
       </button>
       <button onClick=${onClose}>Close${hint("scrubClose")}</button>
     </div>
+    ${!hasVideo &&
+    html`<p class="hint">
+      There is no video clip for this sample, so only the path is replayed.
+    </p>`}
     ${shortcuts &&
     html`<p class="hint keys">
       <kbd>${key("scrubBack")}</kbd> <kbd>${key("scrubForward")}</kbd> one

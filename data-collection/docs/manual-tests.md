@@ -163,7 +163,7 @@ column is filled in by task DC-S2.
 
 - **7.4** Delete one clip file by hand. Open Browse and Review.
   Expect: The sample is listed and editable. Overlay and video are unavailable
-  and say why. `check` lists a note, not an error.
+  and say why. The scrubbing view still opens and replays the path. `check` lists a note, not an error.
 
 ## 3. Results
 
