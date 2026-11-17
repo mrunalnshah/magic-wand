@@ -1,3 +1,6 @@
+import threading
+import time
+
 import cv2
 import numpy as np
 import pytest
@@ -12,6 +15,7 @@ from wand_core.sources import (
     VideoOpenError,
     camera_name,
     list_cameras,
+    run_within,
 )
 from wand_core.testing.synthetic import SceneStyle, circle_path, write_video
 
@@ -254,3 +258,76 @@ def test_list_cameras_can_probe_modes(tmp_path):
     )
     widths = [m.width for m in cameras[0].modes]
     assert widths == [640, 1280, 1920]
+
+
+# --- Cameras that never answer ----------------------------------------------
+
+
+class HangingFactory:
+    """Opens camera ``stuck`` only once ``release_stuck`` is set, like a
+    broken camera whose driver blocks; the other indices open at once."""
+
+    def __init__(self, stuck=0, working=(1,)):
+        self.stuck = stuck
+        self.working = working
+        self.release_stuck = threading.Event()
+        self.late = None
+
+    def __call__(self, index):
+        if index == self.stuck:
+            self.release_stuck.wait(5)
+            self.late = FakeCapture()
+            return self.late
+        return FakeCapture(opened=index in self.working)
+
+
+def test_camera_that_never_answers_raises_within_the_time_limit():
+    factory = HangingFactory()
+    camera = CameraSource(0, capture_factory=factory, open_timeout_s=0.2)
+    started = time.monotonic()
+    with pytest.raises(CameraOpenError, match="did not respond"):
+        camera.open()
+    assert time.monotonic() - started < 2
+    with pytest.raises(FrameSourceError):
+        camera.read()
+
+
+def test_camera_that_opens_too_late_is_released():
+    factory = HangingFactory()
+    camera = CameraSource(0, capture_factory=factory, open_timeout_s=0.1)
+    with pytest.raises(CameraOpenError):
+        camera.open()
+    factory.release_stuck.set()
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline and not (
+        factory.late is not None and factory.late.released
+    ):
+        time.sleep(0.01)
+    assert factory.late.released == 1
+
+
+def test_list_cameras_leaves_out_a_camera_that_never_answers(tmp_path):
+    factory = HangingFactory(stuck=0, working=(1,))
+    started = time.monotonic()
+    cameras = list_cameras(
+        capture_factory=factory, names_dir=tmp_path, open_timeout_s=0.2
+    )
+    assert [c.index for c in cameras] == [1]
+    assert time.monotonic() - started < 3
+    factory.release_stuck.set()
+
+
+def test_run_within_returns_the_result_or_raises_the_error():
+    def fail():
+        raise ValueError("bad")
+
+    assert run_within(lambda: 42, 1.0) == 42
+    assert run_within(lambda: 42, None) == 42
+    with pytest.raises(ValueError, match="bad"):
+        run_within(fail, 1.0)
+
+
+def test_run_within_without_a_limit_runs_in_the_calling_thread():
+    assert run_within(threading.current_thread, None) is (
+        threading.current_thread()
+    )

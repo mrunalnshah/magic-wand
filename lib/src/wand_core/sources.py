@@ -8,26 +8,41 @@ interface, so everything downstream runs identically on both
 Cameras are opened through ``cv2.VideoCapture``. Both ``CameraSource`` and
 ``list_cameras`` accept a ``capture_factory`` so tests can substitute a
 stand-in and never touch real hardware.
+
+Opening a camera that is broken or held by a stuck driver can block forever
+(seen on Windows, where OpenCV uses DirectShow). So a camera is opened in a
+helper thread with a time limit: one that does not answer in time counts as
+unavailable, and the caller is never blocked by it. A capture that opens after
+its caller gave up is released when it does.
 """
 
 from __future__ import annotations
 
+import logging
+import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 import cv2
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS = 640, 480, 30
 MAX_CAMERA_INDEX = 10
 LINUX_CAMERA_NAMES = Path("/sys/class/video4linux")
 PROBE_SIZES = ((640, 480), (1280, 720), (1920, 1080))
+# How long a camera may take to open (and take its mode) before it counts as
+# unavailable. A working USB camera on Windows took up to about 5 s.
+CAMERA_OPEN_TIMEOUT_S = 10.0
 
 CaptureFactory = Callable[[Any], Any]  # index or path -> VideoCapture-like
+Result = TypeVar("Result")
 
 
 class FrameSourceError(RuntimeError):
@@ -194,30 +209,53 @@ class CameraSource(FrameSource):
         fps: float = DEFAULT_FPS,
         capture_factory: CaptureFactory | None = None,
         clock: Callable[[], float] = time.monotonic,
+        open_timeout_s: float | None = CAMERA_OPEN_TIMEOUT_S,
     ) -> None:
         self.index = index
         self.requested = CameraMode(width, height, fps)
         self.actual: CameraMode | None = None
         self._factory = capture_factory or cv2.VideoCapture
         self._clock = clock
+        self._open_timeout_s = open_timeout_s
         self._capture: Any = None
 
     def open(self) -> None:
+        """Open the camera and request the mode.
+
+        Raises ``CameraOpenError`` if the camera cannot be opened or does not
+        answer within ``open_timeout_s`` (``None`` waits for ever).
+        """
         if self._capture is not None:
             return
+        try:
+            opened = run_within(
+                self._open_capture,
+                self._open_timeout_s,
+                cleanup=lambda late: late and late[0].release(),
+            )
+        except TimeoutError as error:
+            raise CameraOpenError(
+                f"camera {self.index} did not respond within "
+                f"{self._open_timeout_s:g} s"
+            ) from error
+        if opened is None:
+            raise CameraOpenError(f"cannot open camera {self.index}")
+        self._capture, self.actual = opened
+
+    def _open_capture(self) -> tuple[Any, CameraMode] | None:
         capture = self._factory(self.index)
         if not capture.isOpened():
             capture.release()
-            raise CameraOpenError(f"cannot open camera {self.index}")
+            return None
         capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.requested.width)
         capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.requested.height)
         capture.set(cv2.CAP_PROP_FPS, self.requested.fps)
-        self.actual = CameraMode(
+        actual = CameraMode(
             int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
             int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
             float(capture.get(cv2.CAP_PROP_FPS)),
         )
-        self._capture = capture
+        return capture, actual
 
     def read(self) -> Frame | None:
         if self._capture is None:
@@ -266,29 +304,89 @@ def list_cameras(
     capture_factory: CaptureFactory | None = None,
     names_dir: Path = LINUX_CAMERA_NAMES,
     probe_modes: bool = False,
+    open_timeout_s: float | None = CAMERA_OPEN_TIMEOUT_S,
 ) -> list[CameraInfo]:
     """Find the cameras on this machine by trying indices from 0.
 
     Returns an empty list when there are none. With ``probe_modes`` it also
     tries a few common resolutions, which is slower and opens each camera
-    longer.
+    longer. A camera that does not answer within ``open_timeout_s`` is left
+    out, so one broken camera does not hide the others.
     """
     factory = capture_factory or cv2.VideoCapture
+
+    def probe(index: int) -> tuple[CameraMode, ...] | None:
+        capture = factory(index)
+        try:
+            if not capture.isOpened():
+                return None
+            return _probe_modes(capture) if probe_modes else ()
+        finally:
+            capture.release()
+
     cameras = []
     for index in range(max_index):
         try:
-            capture = factory(index)
+            modes = run_within(partial(probe, index), open_timeout_s)
+        except TimeoutError:
+            logger.warning(
+                "camera %d did not respond within %g s; left out",
+                index,
+                open_timeout_s,
+            )
+            continue
         except Exception:  # noqa: BLE001 - a bad backend must not stop the scan
             continue
-        try:
-            if not capture.isOpened():
-                continue
-            modes = _probe_modes(capture) if probe_modes else ()
-        finally:
-            capture.release()
+        if modes is None:
+            continue
         name = camera_name(index, names_dir)
         cameras.append(CameraInfo(index, name, name or f"index:{index}", modes))
     return cameras
+
+
+def run_within(
+    work: Callable[[], Result],
+    timeout_s: float | None,
+    cleanup: Callable[[Result], object] | None = None,
+) -> Result:
+    """The result of ``work``, run in a helper thread with a time limit.
+
+    Raises ``TimeoutError`` if ``work`` has not finished after ``timeout_s``
+    seconds; the thread is left to finish on its own, and ``cleanup`` is then
+    called with its late result. An exception raised by ``work`` is raised
+    here. With ``timeout_s`` set to ``None``, ``work`` runs in the calling
+    thread.
+    """
+    if timeout_s is None:
+        return work()
+    lock = threading.Lock()
+    done = threading.Event()
+    outcome: dict[str, Any] = {}
+
+    def run() -> None:
+        try:
+            result = work()
+        except BaseException as error:  # noqa: BLE001 - handed to the caller
+            with lock:
+                outcome["error"] = error
+            done.set()
+            return
+        with lock:
+            outcome["result"] = result
+            late = outcome.get("abandoned", False)
+        done.set()
+        if late and cleanup is not None:
+            cleanup(result)
+
+    threading.Thread(target=run, name="camera-open", daemon=True).start()
+    done.wait(timeout_s)
+    with lock:
+        if "result" not in outcome and "error" not in outcome:
+            outcome["abandoned"] = True
+            raise TimeoutError(f"no answer within {timeout_s:g} s")
+    if "error" in outcome:
+        raise outcome["error"]
+    return outcome["result"]
 
 
 def _probe_modes(capture: Any) -> tuple[CameraMode, ...]:
