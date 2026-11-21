@@ -1,6 +1,6 @@
 # Architecture
 
-> **Version** 5 | **Updated** 2026-11-01 | **Approved**
+> **Version** 6 | **Updated** 2026-11-21 | **Approved**
 
 ## 1. Overview
 
@@ -8,10 +8,10 @@ This document describes the architecture of the magic wand system. It covers:
 
 - how data flows through the system when it collects data, trains a classifier
   and recognizes spells;
-- the subsystems and what each is responsible for, including the shared
-  library;
+- the subsystems and the components in them, and what each is responsible
+  for, including the shared library;
 - the technical decisions, data formats and configuration that every
-  component follows;
+  subsystem follows;
 - how the repository is organized;
 - the items still to be filled in before final submission.
 
@@ -24,25 +24,36 @@ recognizes the motion as one of several predefined gestures (spells) and
 responds with an action: a visual effect on screen, a sound, or, if time
 permits, a physical device.
 
-Terms such as tip, gesture, sample, session and label are defined in
-`docs/glossary.md`.
+The system has three **subsystems**: data collection, training and
+inference. Each has its own purpose, folder and documents. A **component** is a
+building block inside a subsystem, such as vision or the classifier.
+Components that more than one subsystem needs live in the shared library.
+
+Terms such as subsystem, component, tip, gesture, sample, session and label
+are defined in `docs/glossary.md`.
 
 The wand is a brightly colored ping pong ball on a stick, so that OpenCV color
 filtering can find it in the video. The system tracks the center of the ball,
-called the tip. Four stages turn video into an action:
+called the tip. Five components turn video into an action:
 
 1. **Vision** finds the tip in each frame.
 2. **Motion detection** turns the tip's positions into gestures.
-3. **Gesture classification** names the spell a gesture represents.
-4. **Action trigger** performs the effect for that spell.
+3. **Gesture normalization** gives every gesture the same length and form.
+4. **Gesture classification** names the spell a gesture represents.
+5. **Action trigger** performs the effect for that spell.
 
 The classifier is a machine learning model, so it must be trained on labeled
-examples. The system therefore has two modes that share the first two stages:
+examples. The subsystems relate as follows:
 
-- **Inference**: live video goes through all four stages, in real time.
-- **Data collection**: live video goes through the first two stages, and a
-  person labels and stores the resulting gestures as a training dataset
-  (about 1,000 samples per gesture).
+- **Data collection**: live video goes through vision and motion detection,
+  and a person labels and stores the resulting gestures as a training dataset
+  (about 1,000 samples per gesture). Many users contribute to the dataset,
+  each recording on their own machine, and the datasets are merged for
+  training.
+- **Training**: stored gestures go through gesture normalization, and the
+  result trains and evaluates classifiers.
+- **Inference**: live video goes through all five components, in real time,
+  using a trained classifier.
 
 ## 2. System Flow
 
@@ -53,30 +64,30 @@ and motion detection must keep up with the camera's frame rate, and a gesture
 is classified and acted on as soon as it ends.
 
 ```text
- +--------+ frame  +--------+ tip position +-----------+ gesture +----------+
- | Camera |------->| Vision |------------->|  Motion   |-------->| Gesture  |
- +--------+        +--------+ + timestamp  | detection | vectors |classifier|
-                                           +-----------+         +----+-----+
-                                                                      |
-                                                       spell + confidence
-                                                                      v
-                                                                 +---------+
-                                                                 | Action  |
-                                                                 | trigger |
-                                                                 +---------+
+ +--------+ frame  +--------+ tip position +-----------+
+ | Camera |------->| Vision |------------->|  Motion   |
+ +--------+        +--------+ + timestamp  | detection |
+                                           +-----+-----+
+                                                 | gesture (positions)
+                                                 v
+ +---------+ spell +------------+ fixed-   +---------------+
+ | Action  |<------| Gesture    |<---------| Gesture       |
+ | trigger | + conf| classifier | length   | normalization |
+ +---------+       +------------+ vectors  +---------------+
 ```
 
 1. The camera delivers frames. Each frame gets a timestamp.
 2. Vision finds the tip in the frame and outputs its position with the
    frame's timestamp.
-3. Motion detection watches the stream of tip positions. It converts movement
-   between consecutive frames into vectors (direction and speed). A gesture
-   starts when the tip's speed rises above a threshold and ends when it falls
-   below one. Motion that lasts too long or covers too little distance is
-   discarded.
-4. The classifier receives the vectors of one gesture and outputs a spell and
-   a confidence score.
-5. The action trigger performs the action for the spell. If the confidence is
+3. Motion detection watches the stream of tip positions. A gesture starts when
+   the tip's speed rises above a threshold and ends when it falls below one.
+   Motion that lasts too long or covers too little distance is discarded.
+4. Gesture normalization converts the gesture's positions into motion vectors
+   (direction and speed) of a fixed length, whatever the gesture's duration
+   or the camera's frame rate (section 4.3).
+5. The classifier receives the normalized gesture and outputs a spell and a
+   confidence score.
+6. The action trigger performs the action for the spell. If the confidence is
    below the minimum threshold, no action is performed and the user is told
    the gesture was not recognized.
 
@@ -168,79 +179,190 @@ File formats and layout are in `docs/data-handling.md`.
 ### 2.3 Training
 
 ```text
- Dataset (teammate A) --+
- Dataset (teammate B) --+--> Merge --> Training dataset
- Dataset (teammate C) --+                   |
+ Dataset (user A) --+
+ Dataset (user B) --+--> Merge --> Training dataset
+ Dataset (user C) --+                   |
                                             v
-                         Load accepted samples, compute motion vectors
+                       Load accepted samples, normalize each gesture
                                             |
                                             v
-                              Train --> Trained classifier
-                                        (used in inference)
+                       Split by session into training and test sets
+                                            |
+                         +------------------+------------------+
+                         v                                     v
+                  Train each classifier              Build test cases
+                         |                                     |
+                         +-----------> Evaluate <--------------+
+                                          |
+                                          v
+                        Trained classifier + metrics + threshold
+                                 (used in inference)
 ```
 
-Each teammate records sessions on their own machine. The datasets are merged
-into one training dataset; merging copies whole sessions and never changes
-them (see `docs/data-handling.md`). Training loads the accepted samples,
-computes motion vectors from the stored positions with the shared library, and
-trains the classifier. The trained classifier is what the inference flow loads.
+1. Each user records sessions on their own machine. The datasets are
+   merged into one training dataset; merging copies whole sessions and never
+   changes them (see `docs/data-handling.md`).
+2. Training loads the accepted samples of the spell labels and normalizes each
+   gesture with the shared library (section 4.3).
+3. The samples are split by session, so that samples recorded in one session
+   (one person, camera and lighting) are never on both sides of the split.
+   The split can also hold out one author at a time, to measure how well a
+   classifier works for a person it has not seen.
+4. Each classifier is trained on the training side. Every classifier gets the
+   same split, so the results are comparable.
+5. The test side is turned into three kinds of test cases: held-out spells,
+   backward spells (the held-out spells with their positions in reverse
+   order) and non-spell recordings. A backward spell counts as not a spell.
+6. Evaluation measures how often a classifier names the right spell, how often
+   it triggers on a backward spell or a non-spell, and the time it takes per
+   gesture. The measures are computed over a range of confidence thresholds.
+7. The results pick the classifier and its confidence threshold. The trained
+   classifier is saved with the evidence for the choice, and the inference
+   flow loads it.
+
+Non-spell recordings are stored as ordinary samples under a label that
+`config/labels.yaml` marks as not a spell. Training does not learn that label
+as a class; it uses those samples only as test cases.
 
 ### 2.4 Shared Implementation
 
-Vision and motion detection are implemented once, in the shared library, and
-both flows run that implementation. A gesture seen live therefore has the same
-form as a gesture the classifier was trained on. Vectors are computed from
-positions at load time rather than stored, so changing how vectors are built
-does not require re-recording.
+Vision, motion detection, gesture normalization and the classifiers are
+implemented once, in the shared library, and every subsystem runs that
+implementation. A gesture seen live therefore has the same form as a gesture
+the classifier was trained on. Vectors are computed from positions at load
+time rather than stored, so changing how vectors are built or normalized does
+not require re-recording.
 
 ## 3. Subsystems
 
-### 3.1 Vision
+### 3.1 Data collection
+
+An application for recording, labeling and reviewing gestures. It hosts vision
+and motion detection, adds calibration, the labeling workflow and review, and
+writes datasets. Design: `data-collection/docs/design.md`.
+
+### 3.2 Training
+
+A command-line tool that turns a training dataset into a trained classifier.
+It merges datasets, splits and normalizes the samples, trains and evaluates
+classifiers, and saves the result.
+
+- **Several classifiers, one workflow.** Every classifier is trained,
+  evaluated and saved in the same way, through the classifier interface in the
+  shared library. Adding a classifier does not change the workflow.
+- **Experiments.** One configuration file describes one experiment: the
+  dataset, the split, the normalization settings and the classifiers with
+  their settings.
+- **Runs.** Each run writes its own folder holding the experiment
+  configuration, the identity of the dataset it used, the metrics and the
+  trained classifiers, so that any result can be traced and repeated.
+- **Comparison.** A report puts the runs side by side on the measures in
+  section 2.3.
+
+The classifiers to compare are Naive Bayes, a support vector machine, a random
+forest and a neural network for time series. Design:
+`training/docs/design.md`.
+
+### 3.3 Inference
+
+The application that recognizes spells live. It runs the pipeline of section
+2.1 on the camera's video with a trained classifier and the calibration for
+the current camera and room, shows the live view, and hosts the action
+trigger. Design: `inference/docs/design.md`.
+
+## 4. Components
+
+### 4.1 Vision
 
 Finds the tip in each frame by filtering for the ball's color and locating the
 resulting shape. Input: camera frames. Output: tip position and timestamp (or
 "not found") per frame. Its color settings are tuned for each camera and
 lighting condition by calibration.
 
-### 3.2 Motion detection
+### 4.2 Motion detection
 
-Tracks the tip's speed to separate idle from motion, cuts the stream into
-gestures, and builds motion vectors. Input: tip positions with timestamps.
-Output: gestures, and the live state (moving or idle). Its thresholds and time
-window are settings that calibration adjusts.
+Tracks the tip's speed to separate idle from motion and cuts the stream into
+gestures. Input: tip positions with timestamps. Output: gestures, and the live
+state (moving or idle). Its thresholds and time window are settings that
+calibration adjusts.
 
-### 3.3 Gesture classification
+### 4.3 Gesture normalization
 
-A model trained on labeled gestures. Input: the motion vectors of one gesture.
-Output: a spell and a confidence score. It does not decide whether to act on
-the result; the action trigger applies the confidence threshold. Not yet
-designed.
+Gestures differ in duration (a quick flick or a slow circle) and in the number
+of positions (cameras deliver different frame rates and drop frames), while
+most classifiers need an input of one fixed size. Normalization turns any
+gesture into the same form, in four steps:
 
-### 3.4 Action trigger
+1. **Resample.** The positions are resampled to a fixed number of points,
+   spaced at equal time intervals from the first position to the last, by
+   linear interpolation. A gesture with fewer positions is interpolated up to
+   that number of points.
+2. **Vectors.** The displacement between consecutive points (horizontal and
+   vertical, in frame-heights) is one motion vector. The points are equally
+   spaced in time, so a vector's length shows how fast that part of the gesture
+   was relative to the rest, and the vector's direction keeps the order of the
+   motion. A circle drawn clockwise and counterclockwise gives opposite
+   vectors.
+3. **Context values.** Resampling removes the gesture's duration, so the
+   duration in seconds is added as a separate value. The start position can
+   also be added, so that a classifier can use where in the frame the gesture
+   was drawn.
+4. **Output.** The vectors and context values come in two shapes: a flat list
+   of numbers for Naive Bayes, the support vector machine and the random
+   forest, and a sequence for the neural network.
 
-Maps a recognized spell to an effect: on-screen visual, sound, or device
-control. Applies the confidence threshold. Not yet designed.
+The number of points and the choice of context values are settings of the
+experiment. They are saved with the trained classifier, and inference applies
+the same ones. Input: the positions of one gesture. Output: the normalized
+gesture.
 
-### 3.5 Data collection
+Resampling in time, and not along the path's length, keeps the speed profile
+of the gesture, which can tell spells apart.
 
-An application for recording, labeling and reviewing gestures. It hosts vision
-and motion detection, adds calibration, the labeling workflow and review, and
-writes datasets. Design: `data-collection/docs/design.md`.
+### 4.4 Gesture classification
 
-### 3.6 Shared library
+A model trained on labeled gestures. Input: one normalized gesture. Output: a
+spell (a label identifier) and a confidence score between 0 and 1.
+
+- Every classifier family implements one interface: train on labeled gestures,
+  predict a spell with its confidence, save and load. Training and inference
+  both use it.
+- The confidence is the probability the model gives to the predicted spell.
+- A motion that is not a spell, or a spell drawn backward, is rejected by a low
+  confidence, not by a class of its own. The confidence threshold that rejects
+  them is chosen in training.
+- A trained classifier is saved with its list of labels, the normalization
+  settings it needs, and the recommended confidence threshold.
+- The classifier does not decide whether to act on the result; the action
+  trigger applies the confidence threshold.
+
+### 4.5 Action trigger
+
+Maps a recognized spell to an effect: an on-screen visual, a sound, or, if
+time permits, device control. Input: a spell and its confidence. The effect for
+each spell is set in `config/actions.yaml`. The trigger applies the confidence
+threshold: below it nothing is performed and the user is told the gesture was
+not recognized. The threshold starts at the value saved with the classifier
+and can be overridden in configuration.
+
+### 4.6 Shared library
 
 The library (`wand-core`) contains the components that must behave identically
-in data collection and inference. Design: `lib/docs/design.md`.
+in more than one subsystem. Design: `lib/docs/design.md`.
 
 - **Frame sources** deliver camera frames with timestamps, from either a live
   camera or a recorded video file, so the rest of the library runs the same on
   both.
 - **Tracker** finds the tip in one frame using the vision settings. It is the
-  vision subsystem.
+  vision component.
 - **Segmenter** watches the tip positions and decides when a gesture starts
   and ends, using the motion settings. It reports finished gestures, discarded
   motion and the live moving or idle state.
-- **Vector builder** converts a gesture's positions into motion vectors.
+- **Normalizer** implements gesture normalization.
+- **Classifiers** hold the classifier interface and the classifier families,
+  and save and load trained classifiers. The heavy dependency of the neural
+  network is optional, so an installation without it still runs the other
+  families.
 - **Color calibrator** derives vision settings from points the user clicks on
   the tip.
 - **Motion calibrator** proposes motion settings from a short measurement of
@@ -249,14 +371,14 @@ in data collection and inference. Design: `lib/docs/design.md`.
   format in `docs/data-handling.md`.
 - **Path renderer** draws a gesture's path as an image.
 
-Each application imports the library and supplies what the library does not
+Each subsystem imports the library and supplies what the library does not
 have: the camera, the user interface and the application logic. The library
 never opens a camera or draws a user interface by itself, so it can be tested
 with recorded video and synthetic data.
 
-## 4. Conventions
+## 5. Conventions
 
-### 4.1 Technical decisions
+### 5.1 Technical decisions
 
 | Decision | Reason |
 |---|---|
@@ -264,6 +386,9 @@ with recorded video and synthetic data.
 | Python 3.11 or later | OpenCV and ML ecosystem |
 | OpenCV color filtering | The wand is a brightly colored ball |
 | One shared library | Identical processing for training and inference |
+| Classifiers in the library | Training and inference load the same code |
+| Resampling in time | Keeps the speed profile and order of the motion |
+| Split by session | Samples of one session resemble each other |
 | uv workspace, ruff | Reproducible environments, one style |
 | YAML for configuration | Human-edited, supports comments |
 | JSON for recorded data | Small files, readable, safe to edit atomically |
@@ -271,7 +396,7 @@ with recorded video and synthetic data.
 
 Tooling and workflow rules are in `docs/standards.md`.
 
-### 4.2 Data across the system
+### 5.2 Data across the system
 
 Data collection produces datasets and calibrated settings. This is how each
 kind of data is used afterwards.
@@ -305,18 +430,21 @@ Field-level definitions are in `lib/docs/design.md` and
 `docs/data-handling.md`. The rules for handling datasets are in
 `docs/data-handling.md`.
 
-### 4.3 Configuration
+### 5.3 Configuration
 
 All configuration is in `config/`.
 
-- `labels.yaml` (in git): the spell labels. Each has an identifier, used in
-  stored samples and in classifier output, and a display name shown to users.
-  Data collection reads and edits it.
+- `labels.yaml` (in git): the labels. Each has an identifier, used in stored
+  samples and in classifier output, a display name shown to users, and whether
+  it is a spell (a label for non-spell recordings is not). Data collection
+  reads and edits it.
 - `vision.yaml` (in git): default values for the vision settings, such as the
   ball's color range and size limits. Calibration starts from these.
 - `motion.yaml` (in git): default values for the motion settings, such as the
   speed thresholds, the valid gesture duration and the minimum gesture size.
   Calibration starts from these.
+- `actions.yaml` (in git): the effect for each spell, and the confidence
+  threshold override of the action trigger.
 - `data-collection.yaml` (in git): settings of the data collection
   application, such as where datasets are stored, the requested camera mode,
   the countdown length, the video clip padding and the keyboard shortcuts.
@@ -334,7 +462,7 @@ screens then change individual values. When a session starts, the final values
 are copied into the session, so the data states the exact settings its samples
 were captured with.
 
-## 5. Folder Organization
+## 6. Folder Organization
 
 ```text
 magic-wand/
@@ -352,22 +480,35 @@ magic-wand/
     docs/             requirements, design, tasks
     src/              application code
     tests/
+  training/           training tool
+    docs/             requirements, design, tasks
+    src/              training code
+    tests/
+  inference/          inference application
+    docs/             requirements, design, tasks
+    src/              application code
+    tests/
   data/               default dataset location; not in git
+  runs/               default location of training runs; not in git
+  models/             trained classifiers chosen for inference
 ```
 
-Components not yet defined (see To Do) are added as further top-level folders
-and workspace members, each with its own `pyproject.toml`, `docs/`, `src/` and
-`tests/`.
+Each subsystem is a workspace member with its own `pyproject.toml`, `docs/`,
+`src/` and `tests/`. The `training/` and `inference/` folders are created when
+their tasks start.
 
-## 6. To Do
+## 7. To Do
 
 Items to fill in before final submission:
 
-- Gesture classification: model, training approach, confidence threshold, and
-  where training code lives in the repository.
+- Training design: the experiment configuration format, the default number of
+  points and context values for normalization, the settings of each
+  classifier, whether training adds an explicit reject class, and how
+  left-handed samples are treated.
+- Data collection: recording non-spell samples under a label that is not a
+  spell.
 - Action trigger: the effects for each spell, and physical actuation if time
   permits.
-- Run-time application: the component that runs inference end to end, and its
-  folder.
-- The final list of spells, to replace the placeholder labels.
+- Inference application: its user interface and how it applies a calibration
+  profile.
 - Final values for the motion settings, tuned from real recordings.
