@@ -1,6 +1,6 @@
 # Notes
 
-> **Version** 5 | **Updated** 2026-11-15 | **Approved**
+> **Version** 5 | **Updated** 2026-11-21 | **Approved**
 
 ## Overview
 
@@ -11,10 +11,10 @@ are tasks in the owning component's `tasks.md`, not notes.
 
 ## Cameras
 
-- Teammates use different laptop cameras. A camera may ignore the requested
-  resolution or frame rate, and auto-exposure can lower the frame rate in dim
-  light. The application records the mode it actually got and warns when it
-  differs from the request.
+- Different users have different laptop cameras. A camera may ignore the
+  requested resolution or frame rate, and auto-exposure can lower the frame
+  rate in dim light. The application records the mode it actually got and
+  warns when it differs from the request.
 - Stored positions are normalized and carry real timestamps, so differing
   resolutions and frame rates remain comparable. Resampling to a fixed rate
   is done when training or classifying.

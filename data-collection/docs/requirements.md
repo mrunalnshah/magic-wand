@@ -1,6 +1,6 @@
 # Data Collection Application - Requirements
 
-> **Version** 14 | **Updated** 2026-11-15 | **Approved**
+> **Version** 14 | **Updated** 2026-11-21 | **Approved**
 
 ## 1. Overview
 
@@ -54,7 +54,7 @@ this document:
 
 ### R2. Session management (P1)
 - R2.1 Starting a session captures metadata: author, an optional session name
-  chosen by the author so teammates can refer to the session, handedness
+  chosen by the author so users can refer to the session, handedness
   (left/right), start timestamp, camera/device identifier, requested and
   *actual* frame resolution and frame rate, the full vision settings, and the
   full motion-detection settings (including time window and minimum size
@@ -70,7 +70,7 @@ this document:
 - R2.4 Handedness is stored with the session and with each sample. Stored
   positions are never mirrored; any handling of handedness is deferred to
   training.
-- R2.5 **Merge.** Data recorded in parallel (for example by different teammates
+- R2.5 **Merge.** Data recorded in parallel (for example by different users
   on different machines) can be merged into one dataset. Merging never alters
   a session, and reports any conflict instead of silently overwriting.
 - R2.6 **Load an existing session.** The user can load a previously recorded
@@ -102,7 +102,7 @@ this document:
   Clearing a field removes it. Nothing else about a session can be edited.
 
 ### R3. Gesture label management (P1)
-- R3.1 The label set is a project configuration file shared by all teammates,
+- R3.1 The label set is a project configuration file shared by all users,
   and is editable from within the app (add, rename, remove).
 - R3.2 Each label has a stable identifier and a display name. Samples refer to
   the identifier, so renaming a label does not alter any sample. A label that

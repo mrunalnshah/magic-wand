@@ -1,6 +1,6 @@
 # Glossary
 
-> **Version** 1 | **Updated** 2026-11-01 | **Approved**
+> **Version** 2 | **Updated** 2026-11-21 | **Approved**
 
 ## Overview
 
@@ -13,6 +13,8 @@ belong to one component are defined in that component's documents.
 
 - **Calibration**: choosing and testing the camera, the vision settings and
   the motion settings against a live view, before a data collection session.
+- **Component**: a building block inside a subsystem, or in the shared
+  library, such as vision or the classifier.
 - **Dataset**: the stored sessions and samples recorded by data collection.
 - **Gesture**: one deliberate motion of the tip, bounded by idle at the start
   and end.
@@ -29,5 +31,7 @@ belong to one component are defined in that component's documents.
 - **Status**: whether a stored sample is `accepted` or `rejected`. Rejected
   samples stay in the dataset. Deleting a sample is different: it removes the
   sample from the dataset entirely.
+- **Subsystem**: one of the three parts of the system, each with its own
+  folder and documents: data collection, training and inference.
 - **Tip**: the approximate center of the ping pong ball on the wand. It is the
   point whose motion the system tracks.
