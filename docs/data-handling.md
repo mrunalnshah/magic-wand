@@ -56,7 +56,7 @@ root, which is not under version control (recorded video makes datasets too
 large). The location is set in `config/data-collection.yaml`.
 
 The unit of storage and exchange is the **session folder**. It holds everything
-about one session, so a session can be copied, zipped, or sent to a teammate as
+about one session, so a session can be copied, zipped, or sent to a user as
 a whole.
 
 ```text
@@ -80,7 +80,7 @@ a whole.
 Not stored in the data folder:
 
 - **Labels** are shared project configuration (`config/labels.yaml`), so every
-  teammate uses the same identifiers.
+  user uses the same identifiers.
 - **Calibration profiles** are per machine (`config/profiles/`).
 - **Caches** (thumbnails and similar derived files) are created on demand in
   the operating system's user cache location. They can be deleted at any time.
@@ -108,7 +108,7 @@ sessions of all users, so that everyone trains and evaluates on the same data.
   example `3f8c1d2e-9a4b-4c7e-8f10-5b6d7e8f9a0b`. It names the session folder.
   It carries no author or time information; those are in `session.json`.
 - **Session name**: free text chosen by the author when starting the session,
-  so teammates can refer to a session by name. It is stored in `session.json`,
+  so users can refer to a session by name. It is stored in `session.json`,
   need not be unique, and is never used as an identifier or folder name.
 - **Sample id**: `<session id>-<number>`, for example
   `3f8c1d2e-9a4b-4c7e-8f10-5b6d7e8f9a0b-0042`. The number is a sequence that
