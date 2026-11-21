@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "sessionId": "48e315fc-e117-4914-a31c-7536d902bcee",
+  "name": "Reparo",
+  "author": "vamship",
+  "handedness": "right",
+  "startedAt": "2026-11-21T14:15:44.414568-05:00",
+  "endedAt": "2026-11-21T14:45:51.424331-05:00",
+  "notes": "Training data capture for Reparo",
+  "camera": {
+    "device": "index:1",
+    "index": 1,
+    "requested": {
+      "width": 640,
+      "height": 480,
+      "fps": 30.0
+    },
+    "actual": {
+      "width": 640,
+      "height": 480,
+      "fps": 29.865883402703375
+    }
+  },
+  "visionSettings": {
+    "hueCenter": 30,
+    "hueHalfWidth": 10,
+    "satMin": 74,
+    "satMax": 155,
+    "valMin": 139,
+    "valMax": 255,
+    "blurSize": 5,
+    "cleanupSize": 3,
+    "minArea": 0.0003,
+    "maxArea": 0.05,
+    "minRoundness": 0.6
+  },
+  "motionSettings": {
+    "startSpeed": 0.499,
+    "endSpeed": 0.125,
+    "startFrames": 2,
+    "endHoldS": 0.3,
+    "minDurationS": 0.3,
+    "maxDurationS": 4.0,
+    "minExtent": 0.1,
+    "lostTimeoutS": 0.25,
+    "smoothingFrames": 3
+  },
+  "clipPadding": {
+    "preS": 2.0,
+    "postS": 2.0
+  },
+  "highestSampleNumber": 258,
+  "profile": "mac-camera-yellow"
+}
