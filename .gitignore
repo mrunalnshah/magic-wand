@@ -14,5 +14,6 @@ __pycache__/
 
 # Datasets and local configuration
 data/
+training-data/**/videos/
 config/profiles/
 config/*.local.yaml

@@ -1,6 +1,6 @@
 # Architecture
 
-> **Version** 6 | **Updated** 2026-11-21 | **Approved**
+> **Version** 7 | **Updated** 2026-11-21 | **Approved**
 
 ## 1. Overview
 
@@ -489,6 +489,7 @@ magic-wand/
     src/              application code
     tests/
   data/               default dataset location; not in git
+  training-data/      shared training dataset of all users; in git, no video
   runs/               default location of training runs; not in git
   models/             trained classifiers chosen for inference
 ```
