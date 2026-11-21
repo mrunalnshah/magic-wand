@@ -1,6 +1,6 @@
 # Data Handling
 
-> **Version** 5 | **Updated** 2026-11-05 | **Approved**
+> **Version** 6 | **Updated** 2026-11-21 | **Approved**
 
 ## 1. Overview
 
@@ -22,9 +22,11 @@ Goals:
 
 ## 2. Rules
 
-- Datasets are not stored in git. The default location, `data/`, is excluded
-  from version control. A dataset can be placed in any folder on the local
-  machine by setting the data folder in `config/data-collection.yaml`.
+- A user's local dataset is not stored in git. The default location, `data/`,
+  is excluded from version control. A dataset can be placed in any folder on
+  the local machine by setting the data folder in
+  `config/data-collection.yaml`. The one dataset in git is the shared training
+  data (section 3.1), which never contains video clips.
 - A session folder is self-contained and is the unit of exchange. Datasets are
   combined by merging session folders; merging never modifies a session or its
   inputs.
@@ -83,6 +85,22 @@ Not stored in the data folder:
 - **Caches** (thumbnails and similar derived files) are created on demand in
   the operating system's user cache location. They can be deleted at any time.
   Keeping them out of the data folder keeps copies of it clean.
+
+### 3.1 Shared training data
+
+`training-data/` at the repository root is a data folder in git. It holds the
+sessions of all users, so that everyone trains and evaluates on the same data.
+
+- It has the layout above, without `videos/` folders. Video clips are never
+  committed; `.gitignore` excludes them.
+- Only ended sessions are added, so a session in it never changes afterwards.
+- Sessions are added with the merge operation (section 7.3), skipping clips,
+  from the user's local data folder, and are submitted in a pull request.
+- A session is corrected by replacing it with the corrected copy through the
+  merge operation's replace option, in a pull request of its own.
+- The consistency check must report no errors before a pull request merges.
+- Training reads it by default. A user can point training at a local data
+  folder for experiments.
 
 ## 4. Identifiers
 
