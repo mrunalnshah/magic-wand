@@ -11,3 +11,9 @@ labels:
     name: Silencio
   - id: revelio
     name: Revelio
+  - id: aparecum
+    name: Aparecum
+  - id: herbivicus
+    name: Herbivicus
+  - id: expelliarmus
+    name: Expelliarmus
