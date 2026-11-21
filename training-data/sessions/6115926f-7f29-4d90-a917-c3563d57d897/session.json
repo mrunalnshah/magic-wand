@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "sessionId": "6115926f-7f29-4d90-a917-c3563d57d897",
+  "name": "alohomora",
+  "author": "vamship",
+  "handedness": "right",
+  "startedAt": "2026-11-21T12:30:25.555920-05:00",
+  "endedAt": "2026-11-21T13:03:42.232102-05:00",
+  "notes": "Training data capture for all alohomora",
+  "camera": {
+    "device": "index:1",
+    "index": 1,
+    "requested": {
+      "width": 640,
+      "height": 480,
+      "fps": 30.0
+    },
+    "actual": {
+      "width": 640,
+      "height": 480,
+      "fps": 29.767718753532886
+    }
+  },
+  "visionSettings": {
+    "hueCenter": 29,
+    "hueHalfWidth": 8,
+    "satMin": 100,
+    "satMax": 181,
+    "valMin": 125,
+    "valMax": 245,
+    "blurSize": 5,
+    "cleanupSize": 3,
+    "minArea": 0.0003,
+    "maxArea": 0.05,
+    "minRoundness": 0.6
+  },
+  "motionSettings": {
+    "startSpeed": 0.499,
+    "endSpeed": 0.125,
+    "startFrames": 2,
+    "endHoldS": 0.3,
+    "minDurationS": 0.3,
+    "maxDurationS": 4.0,
+    "minExtent": 0.1,
+    "lostTimeoutS": 0.25,
+    "smoothingFrames": 3
+  },
+  "clipPadding": {
+    "preS": 2.0,
+    "postS": 2.0
+  },
+  "highestSampleNumber": 260,
+  "profile": "mac-camera-yellow"
+}
