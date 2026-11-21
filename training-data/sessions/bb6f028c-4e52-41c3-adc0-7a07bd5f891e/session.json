@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "sessionId": "bb6f028c-4e52-41c3-adc0-7a07bd5f891e",
+  "name": "all-spells",
+  "author": "wen",
+  "handedness": "right",
+  "startedAt": "2026-11-19T15:52:23.059248-05:00",
+  "endedAt": "2026-11-21T12:25:58.472525-05:00",
+  "notes": "7 spells captured by wen - 250 samples each",
+  "camera": {
+    "device": "index:0",
+    "index": 0,
+    "requested": {
+      "width": 640,
+      "height": 480,
+      "fps": 30.0
+    },
+    "actual": {
+      "width": 640,
+      "height": 480,
+      "fps": 30.297445485468835
+    }
+  },
+  "visionSettings": {
+    "hueCenter": 175,
+    "hueHalfWidth": 10,
+    "satMin": 72,
+    "satMax": 255,
+    "valMin": 174,
+    "valMax": 255,
+    "blurSize": 5,
+    "cleanupSize": 3,
+    "minArea": 0.0003,
+    "maxArea": 0.05,
+    "minRoundness": 0.45
+  },
+  "motionSettings": {
+    "startSpeed": 0.25,
+    "endSpeed": 0.15,
+    "startFrames": 2,
+    "endHoldS": 0.3,
+    "minDurationS": 0.3,
+    "maxDurationS": 4.0,
+    "minExtent": 0.1,
+    "lostTimeoutS": 0.25,
+    "smoothingFrames": 3
+  },
+  "clipPadding": {
+    "preS": 2.0,
+    "postS": 2.0
+  },
+  "highestSampleNumber": 2052,
+  "profile": null
+}
