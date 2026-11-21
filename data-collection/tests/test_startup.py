@@ -61,12 +61,18 @@ def test_the_repository_labels_load():
         "reparo",
         "silencio",
         "revelio",
+        "aparecum",
+        "herbivicus",
+        "expelliarmus",
     ]
     assert [label.name for label in labels] == [
         "Alohomora",
         "Reparo",
         "Silencio",
         "Revelio",
+        "Aparecum",
+        "Herbivicus",
+        "Expelliarmus",
     ]
 
 
